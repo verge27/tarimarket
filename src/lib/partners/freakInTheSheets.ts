@@ -11,6 +11,7 @@ import { Listing } from '../types';
 // Import product images
 import clitoralSquirrelImg from '@/assets/freakinthesheets/clitoral-squirrel.jpg';
 import spreaderBarImg from '@/assets/freakinthesheets/spreader-bar.jpg';
+import cottelliRedSetImg from '@/assets/freakinthesheets/cottelli-red-set.jpg';
 import teddyRedImg from '@/assets/freakinthesheets/teddy-red.jpg';
 import waterLubeImg from '@/assets/freakinthesheets/water-lube.jpg';
 import fleshlubeIceImg from '@/assets/freakinthesheets/fleshlube-ice.jpg';
@@ -95,7 +96,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(25.99)),
     category: 'adult-intimacy',
     subcategory: 'lingerie-apparel',
-    images: [teddyRedImg],
+    images: [cottelliRedSetImg],
     condition: 'new',
     status: 'active',
     stock: 99,
