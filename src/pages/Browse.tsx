@@ -32,21 +32,8 @@ const Browse = () => {
   const demoListings = getListings();
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Combine all listings (Partner referrals, XMRBazaar, then demo)
-  const listings = [
-    ...freakInTheSheetsListings.map(item => ({
-      ...item,
-      id: item.id || `fits-${Math.random()}`,
-      sellerId: 'freak-in-the-sheets',
-      images: item.images || ['/placeholder.svg'],
-      stock: item.stock || 99,
-      shippingPriceUsd: item.shippingPriceUsd || 0,
-      status: 'active' as const,
-      condition: item.condition || 'new' as const,
-      createdAt: item.createdAt || new Date().toISOString(),
-      isPartner: true,
-      partnerName: 'Freak In The Sheets'
-    })),
+  // Combine all listings (XMRBazaar first, then partner referrals, then demo)
+  const listings: any[] = [
     ...xmrbazaarListings.map(xmr => ({
       ...xmr,
       sellerId: `xmr-${xmr.seller.name}`,
@@ -59,6 +46,26 @@ const Browse = () => {
       isXMRBazaar: true,
       xmrbazaarUrl: xmr.xmrbazaarUrl,
       seller: xmr.seller
+    })),
+    ...freakInTheSheetsListings.map(item => ({
+      ...item,
+      id: item.id || `fits-${Math.random()}`,
+      title: item.title || '',
+      description: item.description || '',
+      priceUsd: item.priceUsd || 0,
+      category: item.category || 'adult-intimacy',
+      sellerId: 'freak-in-the-sheets',
+      images: item.images || ['/placeholder.svg'],
+      stock: item.stock || 99,
+      shippingPriceUsd: item.shippingPriceUsd || 0,
+      status: 'active' as const,
+      condition: item.condition || 'new' as const,
+      createdAt: item.createdAt || new Date().toISOString(),
+      referralUrl: item.referralUrl,
+      fulfillment: item.fulfillment,
+      discreteShipping: item.discreteShipping,
+      isPartner: true,
+      partnerName: 'Freak In The Sheets'
     })),
     ...demoListings
   ];
