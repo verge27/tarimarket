@@ -1,38 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
-import { getCurrentUser, setCurrentUser, DEMO_USERS } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 const Settings = () => {
-  const currentUser = getCurrentUser();
-  const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
-  const [xmrAddress, setXmrAddress] = useState(currentUser?.xmrAddress || '');
+  const { user } = useAuth();
+  const { profile, loading, updateProfile } = useProfile();
+  const [displayName, setDisplayName] = useState('');
+  const [xmrAddress, setXmrAddress] = useState('');
 
-  if (!currentUser) {
-    return <Navigate to="/" replace />;
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setXmrAddress(profile.xmr_address || '');
+    }
+  }, [profile]);
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
-  const handleSave = () => {
-    const updatedUser = {
-      ...currentUser,
-      displayName,
-      xmrAddress
-    };
+  const handleSave = async () => {
+    const { error } = await updateProfile({
+      display_name: displayName,
+      xmr_address: xmrAddress || null
+    });
     
-    // Update in demo users array
-    const userIndex = DEMO_USERS.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-      DEMO_USERS[userIndex] = updatedUser;
+    if (error) {
+      toast.error('Failed to save settings');
+    } else {
+      toast.success('Settings saved successfully!');
     }
-    
-    setCurrentUser(updatedUser);
-    toast.success('Settings saved successfully!');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -70,15 +86,6 @@ const Settings = () => {
             <Button onClick={handleSave} className="w-full">
               Save Changes
             </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6 bg-primary/10 border-primary/20">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-2">Demo Mode</h3>
-            <p className="text-sm text-muted-foreground">
-              This is a demo application. All data is stored locally in your browser and will be lost if you clear your browser data.
-            </p>
           </CardContent>
         </Card>
       </div>
