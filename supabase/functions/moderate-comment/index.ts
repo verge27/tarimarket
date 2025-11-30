@@ -20,29 +20,18 @@ serve(async (req) => {
       );
     }
 
+    const NANO_GPT_API_KEY = Deno.env.get('NANO_GPT_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a content moderation AI for a Monero/XMR marketplace discussion forum. 
+    const systemPrompt = `You are a content moderation AI for the Tari Market, a Monero/XMR marketplace platform. 
+This marketplace integrates listings from XMRBazaar and features categories including Services, Electronics, Digital Goods, Accessories, Physical Goods, Food & Local, and Sports & Outdoor.
+
 Analyze comments for:
 - Spam or advertising
 - Offensive language or harassment
-- Misinformation about cryptocurrency/Monero
+- Misinformation about cryptocurrency/Monero/XMRBazaar
 - Scam attempts or phishing
-- Off-topic content unrelated to XMRBazaar/Monero/privacy marketplace
+- Off-topic content unrelated to the marketplace, Monero, or privacy
 
 Respond with JSON:
 {
@@ -50,31 +39,85 @@ Respond with JSON:
   "reason": "brief explanation if not approved",
   "severity": "low" | "medium" | "high",
   "suggestions": "optional suggestions for improvement"
-}`
-          },
-          {
-            role: 'user',
-            content: `Moderate this comment: "${comment}"`
-          }
-        ],
-        temperature: 0.3,
-      }),
-    });
+}`;
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Moderate this comment: "${comment}"` }
+    ];
+
+    let response;
+    let usedNanoGPT = false;
+
+    // Try Nano GPT first
+    if (NANO_GPT_API_KEY) {
+      try {
+        console.log('Attempting Nano GPT moderation...');
+        const nanoResponse = await fetch('https://nano-gpt.com/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${NANO_GPT_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages,
+            temperature: 0.3,
+          }),
+        });
+
+        if (nanoResponse.ok) {
+          response = nanoResponse;
+          usedNanoGPT = true;
+          console.log('Nano GPT moderation successful');
+        } else {
+          console.log(`Nano GPT failed with status ${nanoResponse.status}, falling back to Lovable AI`);
+        }
+      } catch (error) {
+        console.log('Nano GPT error, falling back to Lovable AI:', error);
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please contact support.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    }
+
+    // Fallback to Lovable AI
+    if (!usedNanoGPT) {
+      if (!LOVABLE_API_KEY) {
+        throw new Error('No AI service available');
       }
-      throw new Error(`AI Gateway error: ${response.status}`);
+      console.log('Using Lovable AI for moderation...');
+      const lovableResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-5-nano',
+          messages,
+          temperature: 0.3,
+        }),
+      });
+
+      response = lovableResponse;
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: 'AI credits exhausted. Please contact support.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        throw new Error(`AI Gateway error: ${response.status}`);
+      }
+    }
+
+    if (!response) {
+      throw new Error('No AI response received');
     }
 
     const data = await response.json();
