@@ -1,6 +1,6 @@
 import { Link, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
-import { getCurrentUser, getListings, getOrders } from '@/lib/data';
+import { getListings, getOrders } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,16 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from '@/hooks/useAuth';
 
 const Sell = () => {
-  const currentUser = getCurrentUser();
+  const { user } = useAuth();
 
-  if (!currentUser) {
-    return <Navigate to="/" replace />;
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
-  const listings = getListings().filter(l => l.sellerId === currentUser.id);
-  const orders = getOrders().filter(o => o.sellerId === currentUser.id);
+  const listings = getListings().filter(l => l.sellerId === user.id);
+  const orders = getOrders().filter(o => o.sellerId === user.id);
   
   const totalRevenue = orders
     .filter(o => o.status !== 'pending_payment')

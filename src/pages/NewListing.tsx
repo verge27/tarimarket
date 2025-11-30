@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
-import { getCurrentUser, addListing } from '@/lib/data';
+import { addListing } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const NewListing = () => {
-  const currentUser = getCurrentUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
@@ -23,8 +24,8 @@ const NewListing = () => {
     shippingPriceXmr: '0'
   });
 
-  if (!currentUser) {
-    return <Navigate to="/" replace />;
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -37,7 +38,7 @@ const NewListing = () => {
 
     const newListing = {
       id: `listing-${Date.now()}`,
-      sellerId: currentUser.id,
+      sellerId: user.id,
       title: formData.title,
       description: formData.description,
       priceXmr: parseFloat(formData.priceXmr),

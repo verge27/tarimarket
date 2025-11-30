@@ -1,28 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Shield, ShoppingBag, User, Package } from 'lucide-react';
+import { Shield, ShoppingBag, User, Package, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getCurrentUser, setCurrentUser, DEMO_USERS } from '@/lib/data';
-import { useState, useEffect } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/hooks/useAuth';
+import { NavLink } from './NavLink';
 
 export const Navbar = () => {
-  const [currentUser, setUser] = useState(getCurrentUser());
-
-  const handleUserSwitch = (userId: string) => {
-    const user = DEMO_USERS.find(u => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      setUser(user);
-      window.location.reload();
-    }
-  };
+  const { user, signOut } = useAuth();
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-50">
@@ -41,7 +24,7 @@ export const Navbar = () => {
               </Button>
             </Link>
             
-            {currentUser && (
+            {user && (
               <>
                 <Link to="/orders">
                   <Button variant="ghost" className="gap-2">
@@ -54,38 +37,22 @@ export const Navbar = () => {
                     Sell
                   </Button>
                 </Link>
+                <Link to="/settings">
+                  <Button variant="ghost" size="icon">
+                    <User className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
               </>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <User className="w-4 h-4" />
-                  {currentUser ? currentUser.displayName : 'Login'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Demo Users</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {DEMO_USERS.map(user => (
-                  <DropdownMenuItem
-                    key={user.id}
-                    onClick={() => handleUserSwitch(user.id)}
-                    className={currentUser?.id === user.id ? 'bg-primary/20' : ''}
-                  >
-                    {user.displayName}
-                  </DropdownMenuItem>
-                ))}
-                {currentUser && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <Link to="/settings">
-                      <DropdownMenuItem>Settings</DropdownMenuItem>
-                    </Link>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!user && (
+              <Link to="/auth">
+                <Button>Sign In</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
