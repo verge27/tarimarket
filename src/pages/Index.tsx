@@ -1,12 +1,147 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from 'react-router-dom';
+import { Shield, Lock, Zap, Package, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Navbar } from '@/components/Navbar';
 
 const Index = () => {
+  const features = [
+    {
+      icon: Shield,
+      title: 'Anonymous Trading',
+      description: 'Buy and sell with complete privacy using Monero (XMR) payments'
+    },
+    {
+      icon: Lock,
+      title: 'Secure Payments',
+      description: 'Powered by Trocador AnonPay for safe cryptocurrency transactions'
+    },
+    {
+      icon: Zap,
+      title: 'Instant Listings',
+      description: 'Start selling in minutes with our simple listing creation'
+    },
+    {
+      icon: Package,
+      title: 'Order Tracking',
+      description: 'Track your orders from payment to delivery'
+    }
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-20 md:py-32">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+            Buy & Sell
+            <br />
+            <span className="text-gradient">Anonymously</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            The privacy-first marketplace powered by cryptocurrency. Trade physical goods, digital products, and services without compromising your identity.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link to="/browse">
+              <Button size="lg" className="gap-2 text-lg px-8">
+                Start Shopping
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/sell">
+              <Button size="lg" variant="secondary" className="gap-2 text-lg px-8">
+                Start Selling
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <Card key={index} className="border-border/50 bg-card/50 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm">{feature.description}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            How It Works
+          </h2>
+          <div className="space-y-8">
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                1
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Browse Listings</h3>
+                <p className="text-muted-foreground">
+                  Explore our marketplace for physical goods, digital products, and services. All transactions are conducted in XMR for maximum privacy.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                2
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Pay with Crypto</h3>
+                <p className="text-muted-foreground">
+                  Complete your purchase using Trocador AnonPay. Pay with various cryptocurrencies and convert to XMR automatically.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                3
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Track Your Order</h3>
+                <p className="text-muted-foreground">
+                  Monitor your order status from payment confirmation to delivery. Sellers ship directly to you.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 py-20">
+        <Card className="bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-primary/20">
+          <CardContent className="p-12 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Ready to Start Trading?
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Join the privacy-focused marketplace today. No registration required to browse.
+            </p>
+            <Link to="/browse">
+              <Button size="lg" className="gap-2">
+                Explore Marketplace
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 };

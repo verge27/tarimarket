@@ -1,0 +1,186 @@
+import { Link, Navigate } from 'react-router-dom';
+import { Navbar } from '@/components/Navbar';
+import { getCurrentUser, getListings, getOrders } from '@/lib/data';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Package, DollarSign, ShoppingBag } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const Sell = () => {
+  const currentUser = getCurrentUser();
+
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+
+  const listings = getListings().filter(l => l.sellerId === currentUser.id);
+  const orders = getOrders().filter(o => o.sellerId === currentUser.id);
+  
+  const totalRevenue = orders
+    .filter(o => o.status !== 'pending_payment')
+    .reduce((sum, o) => sum + o.totalXmr, 0);
+  
+  const activeListings = listings.filter(l => l.status === 'active').length;
+
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Seller Dashboard</h1>
+            <p className="text-muted-foreground">Manage your listings and orders</p>
+          </div>
+          <Link to="/sell/new">
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Listing
+            </Button>
+          </Link>
+        </div>
+
+        {/* Stats */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm mb-1">Total Revenue</p>
+                  <p className="text-3xl font-bold text-primary">{totalRevenue.toFixed(2)} XMR</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm mb-1">Active Listings</p>
+                  <p className="text-3xl font-bold">{activeListings}</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ShoppingBag className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm mb-1">Total Orders</p>
+                  <p className="text-3xl font-bold">{orders.length}</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Package className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Listings */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">My Listings</h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {listings.map(listing => (
+                  <TableRow key={listing.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={listing.images[0]}
+                          alt={listing.title}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <span className="font-medium">{listing.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-semibold">{listing.priceXmr} XMR</TableCell>
+                    <TableCell>{listing.stock}</TableCell>
+                    <TableCell>
+                      <Badge variant={listing.status === 'active' ? 'default' : 'secondary'}>
+                        {listing.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {listings.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No listings yet. Create your first listing to get started!
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Orders */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.slice(0, 5).map(order => {
+                  const listing = getListings().find(l => l.id === order.listingId);
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono text-sm">{order.id}</TableCell>
+                      <TableCell className="font-semibold">{order.totalXmr} XMR</TableCell>
+                      <TableCell>
+                        <Badge>{order.status.replace('_', ' ')}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/order/${order.id}`}>
+                          <Button variant="outline" size="sm">View</Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {orders.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No orders yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Sell;
