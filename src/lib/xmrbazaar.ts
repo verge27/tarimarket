@@ -22,13 +22,16 @@ import longboardImg from '@/assets/xmrbazaar/longboard.jpg';
 import vpsComboImg from '@/assets/xmrbazaar/vps-combo.jpg';
 import hodlersDenImg from '@/assets/xmrbazaar/hodlersden-domain.jpg';
 
-// Placeholder images for listings without scraped images
-import xmrPhone from '@/assets/xmr-phone.jpg';
+// Generated images for remaining listings
+import moneroWatchImg from '@/assets/xmrbazaar/monero-watch.jpg';
+import pixel8aImg from '@/assets/xmrbazaar/pixel-8a.jpg';
+import pixel6aImg from '@/assets/xmrbazaar/pixel-6a.jpg';
+import privacyNodeImg from '@/assets/xmrbazaar/privacy-node-setup.jpg';
+import frenchCheeseImg from '@/assets/xmrbazaar/french-cheese.jpg';
+import autoMechanicImg from '@/assets/xmrbazaar/auto-mechanic.jpg';
+
+// Placeholders for remaining
 import xmrProgramming from '@/assets/xmr-programming.jpg';
-import xmrAccessories from '@/assets/xmr-accessories.jpg';
-import xmrVps from '@/assets/xmr-vps.jpg';
-import xmrFood from '@/assets/xmr-food.jpg';
-import xmrAutomotive from '@/assets/xmr-automotive.jpg';
 
 export interface XMRBazaarListing {
   id: string;
@@ -103,7 +106,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "programming",
     seller: { name: "AilliaLink", rating: 5.0, reviews: 12 },
-    images: [xmrProgramming],
+    images: [xmrProgramming], // Listing no longer exists
     xmrbazaarUrl: "https://xmrbazaar.com/listing/uFwh/",
     hasEscrow: true,
     isReferral: true,
@@ -147,7 +150,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "phones",
     seller: { name: "wadejbeckett", rating: 5.0, reviews: 8 },
-    images: [xmrPhone],
+    images: [pixel8aImg],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/Pk5b/",
     hasEscrow: true,
     location: "Ireland",
@@ -176,7 +179,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "phones",
     seller: { name: "SimplifiedPrivacy", rating: 4.9, reviews: 34 },
-    images: [xmrPhone],
+    images: [pixel6aImg],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/dpkQ/",
     hasEscrow: true,
     isReferral: true,
@@ -248,7 +251,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "accessories",
     subcategory: "watches",
     seller: { name: "XMRWatch", rating: 4.5, reviews: 2 },
-    images: [xmrAccessories],
+    images: [moneroWatchImg],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: true,
     isReferral: true,
@@ -293,7 +296,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "hosting",
     seller: { name: "PrivacySetup", rating: 4.8, reviews: 15 },
-    images: [xmrVps],
+    images: [privacyNodeImg],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: true,
     isReferral: true,
@@ -325,7 +328,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "food",
     subcategory: "artisan",
     seller: { name: "Neobees", rating: 4.5, reviews: 6 },
-    images: [xmrFood],
+    images: [frenchCheeseImg],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: false,
     location: "France",
@@ -340,7 +343,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "automotive",
     seller: { name: "MECHNERO504", rating: 4.0, reviews: 1 },
-    images: [xmrAutomotive],
+    images: [autoMechanicImg],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: false,
     location: "Metairie, LA, USA",
