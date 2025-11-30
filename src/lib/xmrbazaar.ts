@@ -7,6 +7,19 @@
  * Prices in USD with XMR equivalent. XMR rate: ~$165
  */
 
+import xmrCryptoServices from '@/assets/xmr-crypto-services.jpg';
+import xmrPhone from '@/assets/xmr-phone.jpg';
+import xmrProgramming from '@/assets/xmr-programming.jpg';
+import xmrHardware from '@/assets/xmr-hardware.jpg';
+import xmrAccessories from '@/assets/xmr-accessories.jpg';
+import xmrEsim from '@/assets/xmr-esim.jpg';
+import xmrDomain from '@/assets/xmr-domain.jpg';
+import xmrVps from '@/assets/xmr-vps.jpg';
+import xmrDesign from '@/assets/xmr-design.jpg';
+import xmrFood from '@/assets/xmr-food.jpg';
+import xmrSports from '@/assets/xmr-sports.jpg';
+import xmrAutomotive from '@/assets/xmr-automotive.jpg';
+
 export interface XMRBazaarListing {
   id: string;
   title: string;
@@ -38,7 +51,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "crypto-exchange",
     seller: { name: "cypherpink", rating: 5.0, reviews: 201 },
-    images: ["/placeholder-xmr.png"],
+    images: [xmrCryptoServices],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/dYiT/",
     hasEscrow: true,
     isReferral: true,
@@ -52,7 +65,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "crypto-exchange",
     seller: { name: "CaptainCanaryLLC", rating: 5.0, reviews: 47 },
-    images: ["/placeholder-xmr.png"],
+    images: [xmrCryptoServices],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/m5fM/",
     hasEscrow: true,
     isReferral: true,
@@ -66,7 +79,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "proxy-shopping",
     seller: { name: "denis", rating: 4.9, reviews: 89 },
-    images: ["/placeholder-payment.png"],
+    images: [xmrCryptoServices],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/Yviu/",
     hasEscrow: true,
     isReferral: true,
@@ -80,7 +93,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "programming",
     seller: { name: "AilliaLink", rating: 5.0, reviews: 12 },
-    images: ["/placeholder-code.png"],
+    images: [xmrProgramming],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/uFwh/",
     hasEscrow: true,
     isReferral: true,
@@ -94,7 +107,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "programming",
     seller: { name: "denis", rating: 4.9, reviews: 89 },
-    images: ["/placeholder-matrix.png"],
+    images: [xmrProgramming],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/fvQY/",
     hasEscrow: true,
     isReferral: true,
@@ -108,7 +121,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "design",
     seller: { name: "MX Graphics", rating: 5.0, reviews: 1 },
-    images: ["/placeholder-design.png"],
+    images: [xmrDesign],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/9i9T/",
     hasEscrow: false,
     isReferral: true,
@@ -124,7 +137,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "phones",
     seller: { name: "wadejbeckett", rating: 5.0, reviews: 8 },
-    images: ["/placeholder-pixel.png"],
+    images: [xmrPhone],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/Pk5b/",
     hasEscrow: true,
     location: "Ireland",
@@ -139,7 +152,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "phones",
     seller: { name: "SimplifiedPrivacy", rating: 4.9, reviews: 34 },
-    images: ["/placeholder-pixel-fold.png"],
+    images: [xmrPhone],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/LKP8/",
     hasEscrow: true,
     isReferral: true,
@@ -153,7 +166,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "phones",
     seller: { name: "SimplifiedPrivacy", rating: 4.9, reviews: 34 },
-    images: ["/placeholder-pixel6a.png"],
+    images: [xmrPhone],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/dpkQ/",
     hasEscrow: true,
     isReferral: true,
@@ -167,7 +180,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "electronics",
     subcategory: "hardware",
     seller: { name: "OneChipStore", rating: 5.0, reviews: 3 },
-    images: ["/placeholder-fpga.png"],
+    images: [xmrHardware],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/ukAJ/",
     hasEscrow: true,
     isReferral: true,
@@ -181,7 +194,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "digital-goods",
     subcategory: "telecom",
     seller: { name: "Aeronnect", rating: 4.8, reviews: 23 },
-    images: ["/placeholder-esim.png"],
+    images: [xmrEsim],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/VC6S/",
     hasEscrow: true,
     isReferral: true,
@@ -197,7 +210,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "accessories",
     subcategory: "stickers",
     seller: { name: "MoneroMerch", rating: 5.0, reviews: 7 },
-    images: ["/placeholder-sticker.png"],
+    images: [xmrAccessories],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/x7e7/",
     hasEscrow: true,
     isReferral: true,
@@ -211,7 +224,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "accessories",
     subcategory: "patches",
     seller: { name: "XMRPatches", rating: 5.0, reviews: 4 },
-    images: ["/placeholder-patch.png"],
+    images: [xmrAccessories],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/rYrH/",
     hasEscrow: true,
     isReferral: true,
@@ -225,7 +238,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "accessories",
     subcategory: "watches",
     seller: { name: "XMRWatch", rating: 4.5, reviews: 2 },
-    images: ["/placeholder-watch.png"],
+    images: [xmrAccessories],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: true,
     isReferral: true,
@@ -239,7 +252,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "sports",
     subcategory: "outdoor",
     seller: { name: "darrolnor", rating: 5.0, reviews: 4 },
-    images: ["/placeholder-longboard.png"],
+    images: [xmrSports],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/ZHBZ/",
     hasEscrow: false,
     location: "Germany",
@@ -256,7 +269,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "hosting",
     seller: { name: "SimplifiedPrivacy", rating: 4.9, reviews: 34 },
-    images: ["/placeholder-vps.png"],
+    images: [xmrVps],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/3YYU/",
     hasEscrow: true,
     isReferral: true,
@@ -270,7 +283,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "hosting",
     seller: { name: "PrivacySetup", rating: 4.8, reviews: 15 },
-    images: ["/placeholder-server.png"],
+    images: [xmrVps],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: true,
     isReferral: true,
@@ -286,7 +299,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "digital-goods",
     subcategory: "domains",
     seller: { name: "DomainSeller", rating: 5.0, reviews: 2 },
-    images: ["/placeholder-domain.png"],
+    images: [xmrDomain],
     xmrbazaarUrl: "https://xmrbazaar.com/listing/277r/",
     hasEscrow: true,
     isReferral: true,
@@ -302,7 +315,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "food",
     subcategory: "artisan",
     seller: { name: "Neobees", rating: 4.5, reviews: 6 },
-    images: ["/placeholder-cheese.png"],
+    images: [xmrFood],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: false,
     location: "France",
@@ -317,7 +330,7 @@ export const xmrbazaarListings: XMRBazaarListing[] = [
     category: "services",
     subcategory: "automotive",
     seller: { name: "MECHNERO504", rating: 4.0, reviews: 1 },
-    images: ["/placeholder-mechanic.png"],
+    images: [xmrAutomotive],
     xmrbazaarUrl: "https://xmrbazaar.com/",
     hasEscrow: false,
     location: "Metairie, LA, USA",
