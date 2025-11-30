@@ -8,6 +8,18 @@
 
 import { Listing } from '../types';
 
+// Import product images
+import clitoralSquirrelImg from '@/assets/freakinthesheets/clitoral-squirrel.jpg';
+import spreaderBarImg from '@/assets/freakinthesheets/spreader-bar.jpg';
+import teddyRedImg from '@/assets/freakinthesheets/teddy-red.jpg';
+import waterLubeImg from '@/assets/freakinthesheets/water-lube.jpg';
+import masturbatorImg from '@/assets/freakinthesheets/masturbator.jpg';
+import doubleDildoImg from '@/assets/freakinthesheets/double-dildo.jpg';
+import buttPlugBlingImg from '@/assets/freakinthesheets/butt-plug-bling.jpg';
+import wandMassagerImg from '@/assets/freakinthesheets/wand-massager.jpg';
+import cockRingsImg from '@/assets/freakinthesheets/cock-rings.jpg';
+import rabbitVibratorImg from '@/assets/freakinthesheets/rabbit-vibrator.jpg';
+
 const FREAK_BASE_URL = 'https://www.freakinthesheets.co.uk';
 
 // XMR price approximately £165 / $208 USD - adjust as needed
@@ -27,7 +39,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(22.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/10-speed-remote-vibrating-egg.jpg'],
+    images: [clitoralSquirrelImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -51,7 +63,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(46.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/sportsheets-bondage-bar.jpg'],
+    images: [spreaderBarImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -75,7 +87,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(25.99)),
     category: 'adult-intimacy',
     subcategory: 'lingerie-apparel',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/cottelli-bra-set.jpg'],
+    images: [teddyRedImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -99,7 +111,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(13.99)),
     category: 'adult-intimacy',
     subcategory: 'wellness-enhancement',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/id-free-lubricant.jpg'],
+    images: [waterLubeImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -121,7 +133,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(11.99)),
     category: 'adult-intimacy',
     subcategory: 'wellness-enhancement',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/fleshlube-ice.jpg'],
+    images: [waterLubeImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -145,7 +157,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(34.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/fleshlight-quickshot.jpg'],
+    images: [masturbatorImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -169,7 +181,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(59.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/evolved-come-together.jpg'],
+    images: [doubleDildoImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -193,7 +205,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(89.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/je-joue-nuo.jpg'],
+    images: [buttPlugBlingImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -217,7 +229,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(129.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/le-wand-swerve.jpg'],
+    images: [wandMassagerImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -241,7 +253,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(44.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/balldo-purple.jpg'],
+    images: [cockRingsImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -265,7 +277,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(39.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/gender-x-dualistic.jpg'],
+    images: [doubleDildoImg],
     condition: 'new',
     status: 'active',
     stock: 99,
@@ -289,7 +301,7 @@ export const freakInTheSheetsListings: Partial<Listing>[] = [
     priceXmr: usdToXmr(gbpToUsd(74.99)),
     category: 'adult-intimacy',
     subcategory: 'toys-devices',
-    images: ['https://www.freakinthesheets.co.uk/wp-content/uploads/2022/02/wonderlove-stimulator.jpg'],
+    images: [rabbitVibratorImg],
     condition: 'new',
     status: 'active',
     stock: 99,
