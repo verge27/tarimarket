@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRightLeft, RefreshCw, Copy, ExternalLink, Check } from 'lucide-react';
+import { ArrowRightLeft, RefreshCw, Copy, ExternalLink, Check, History, Clock } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,20 @@ interface TradeResponse {
   amount_to: string;
 }
 
+interface SwapHistoryItem {
+  id: string;
+  trade_id: string;
+  from_coin: string;
+  from_network: string;
+  to_coin: string;
+  to_network: string;
+  amount: string;
+  receive_address: string;
+  provider: string;
+  status: string | null;
+  created_at: string;
+}
+
 
 const Swaps = () => {
   const { toast } = useToast();
@@ -81,9 +95,12 @@ const Swaps = () => {
   const [executingTrade, setExecutingTrade] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hasFetchedRates, setHasFetchedRates] = useState(false);
+  const [swapHistory, setSwapHistory] = useState<SwapHistoryItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     fetchCoins();
+    fetchSwapHistory();
   }, []);
 
   const fetchCoins = async () => {
@@ -130,6 +147,35 @@ const Swaps = () => {
       toast({ title: 'Error', description: 'Failed to sync coins', variant: 'destructive' });
     }
     setLoading(false);
+  };
+
+  const fetchSwapHistory = async () => {
+    const savedTradeIds = JSON.parse(localStorage.getItem('swap_trade_ids') || '[]');
+    if (savedTradeIds.length === 0) return;
+    
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('swap_history')
+        .select('*')
+        .in('trade_id', savedTradeIds)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setSwapHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching swap history:', error);
+    }
+    setLoadingHistory(false);
+  };
+
+  const saveTradeIdToLocal = (tradeId: string) => {
+    const savedTradeIds = JSON.parse(localStorage.getItem('swap_trade_ids') || '[]');
+    if (!savedTradeIds.includes(tradeId)) {
+      savedTradeIds.unshift(tradeId);
+      // Keep only last 50 trades
+      localStorage.setItem('swap_trade_ids', JSON.stringify(savedTradeIds.slice(0, 50)));
+    }
   };
 
   const getUniqueCoins = () => {
@@ -306,6 +352,10 @@ const Swaps = () => {
         provider_memo: data.address_memo,
         status: data.status,
       });
+
+      // Save trade_id to localStorage for history
+      saveTradeIdToLocal(data.trade_id);
+      fetchSwapHistory();
 
       toast({ title: 'Trade created!', description: `Send ${amount} ${fromCoin} to the address shown` });
     } catch (error) {
@@ -658,6 +708,65 @@ const Swaps = () => {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Swap History */}
+          {swapHistory.length > 0 && (
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Swap History
+                </CardTitle>
+                <CardDescription>Your recent swaps on this device</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-4">
+                    <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {swapHistory.map((swap) => (
+                      <div
+                        key={swap.id}
+                        className="p-3 rounded-lg border border-border bg-secondary/30"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {swap.amount} {swap.from_coin.toUpperCase()}
+                            </span>
+                            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{swap.to_coin.toUpperCase()}</span>
+                          </div>
+                          <Badge variant={swap.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                            {swap.status || 'pending'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(swap.created_at).toLocaleString()}
+                          </span>
+                          <span>via {swap.provider}</span>
+                        </div>
+                        <div className="mt-2 text-xs">
+                          <a 
+                            href={`https://trocador.app/en/checkout/${swap.trade_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex items-center gap-1"
+                          >
+                            Track swap <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Info Section */}
