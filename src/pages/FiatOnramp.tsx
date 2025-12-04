@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, ExternalLink, Wallet, Info, CheckCircle } from 'lucide-react';
+import { CreditCard, ExternalLink, Wallet, Info, CheckCircle, ArrowRightLeft } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -8,30 +8,32 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const FIAT_CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'usd', symbol: '$', name: 'US Dollar' },
+  { code: 'eur', symbol: '€', name: 'Euro' },
+  { code: 'gbp', symbol: '£', name: 'British Pound' },
 ];
 
 const CRYPTO_OPTIONS = [
-  { ticker: 'ETH', network: 'ethereum', name: 'Ethereum', networkName: 'Ethereum' },
-  { ticker: 'BTC', network: 'mainnet', name: 'Bitcoin', networkName: 'Mainnet' },
-  { ticker: 'USDT', network: 'ethereum', name: 'Tether', networkName: 'Ethereum (ERC20)' },
-  { ticker: 'USDT', network: 'tron', name: 'Tether', networkName: 'Tron (TRC20)' },
-  { ticker: 'USDC', network: 'ethereum', name: 'USD Coin', networkName: 'Ethereum (ERC20)' },
-  { ticker: 'USDC', network: 'polygon', name: 'USD Coin', networkName: 'Polygon' },
-  { ticker: 'SOL', network: 'solana', name: 'Solana', networkName: 'Solana' },
-  { ticker: 'MATIC', network: 'polygon', name: 'Polygon', networkName: 'Polygon' },
-  { ticker: 'BNB', network: 'bsc', name: 'BNB', networkName: 'BNB Chain' },
-  { ticker: 'DOGE', network: 'mainnet', name: 'Dogecoin', networkName: 'Mainnet' },
+  { ticker: 'eth', network: 'ethereum', name: 'Ethereum', networkName: 'Ethereum' },
+  { ticker: 'btc', network: 'bitcoin', name: 'Bitcoin', networkName: 'Bitcoin' },
+  { ticker: 'usdt', network: 'ethereum', name: 'Tether', networkName: 'Ethereum (ERC20)' },
+  { ticker: 'usdt', network: 'tron', name: 'Tether', networkName: 'Tron (TRC20)' },
+  { ticker: 'usdc', network: 'ethereum', name: 'USD Coin', networkName: 'Ethereum (ERC20)' },
+  { ticker: 'usdc', network: 'polygon', name: 'USD Coin', networkName: 'Polygon' },
+  { ticker: 'sol', network: 'solana', name: 'Solana', networkName: 'Solana' },
+  { ticker: 'matic', network: 'polygon', name: 'Polygon', networkName: 'Polygon' },
+  { ticker: 'bnb', network: 'bsc', name: 'BNB', networkName: 'BNB Chain' },
+  { ticker: 'doge', network: 'dogecoin', name: 'Dogecoin', networkName: 'Dogecoin' },
 ];
 
 const FiatOnramp = () => {
-  const [fiatCurrency, setFiatCurrency] = useState('USD');
+  const [mode, setMode] = useState<'buy' | 'sell'>('buy');
+  const [fiatCurrency, setFiatCurrency] = useState('usd');
   const [fiatAmount, setFiatAmount] = useState('100');
-  const [selectedCrypto, setSelectedCrypto] = useState('ETH-ethereum');
+  const [selectedCrypto, setSelectedCrypto] = useState('eth-ethereum');
   const [walletAddress, setWalletAddress] = useState('');
 
   const getCryptoDetails = (value: string) => {
@@ -41,33 +43,29 @@ const FiatOnramp = () => {
 
   const selectedCryptoDetails = getCryptoDetails(selectedCrypto);
 
-  const openTransak = () => {
+  const openOnramper = () => {
     const [cryptoCode, network] = selectedCrypto.split('-');
     
-    // Build Transak URL with parameters
-    // Using staging environment - replace with production for live
-    const baseUrl = 'https://global-stg.transak.com';
+    // Build Onramper URL with parameters
+    const baseUrl = 'https://buy.onramper.com';
     
     const params = new URLSearchParams({
-      apiKey: '4fcd6904-706b-4aff-bd9d-77422813bbb7', // Transak staging test key
-      environment: 'STAGING',
-      defaultCryptoCurrency: cryptoCode,
-      network: network,
-      defaultFiatCurrency: fiatCurrency,
-      defaultFiatAmount: fiatAmount,
-      fiatCurrency: fiatCurrency,
-      cryptoCurrencyCode: cryptoCode,
-      themeColor: 'F97316', // Orange theme
-      hideMenu: 'true',
-      disableWalletAddressForm: walletAddress ? 'true' : 'false',
+      apiKey: 'pk_prod_01HETEQF46GSK6BS5JWKDF31BT', // Onramper demo key
+      mode: mode,
+      defaultCrypto: cryptoCode,
+      defaultFiat: fiatCurrency,
+      defaultAmount: fiatAmount,
+      themeName: 'dark',
+      primaryColor: 'F97316', // Orange theme
     });
 
+    // Add network-specific wallet if provided
     if (walletAddress) {
-      params.append('walletAddress', walletAddress);
+      params.append('networkWallets', `${network}:${walletAddress}`);
     }
 
-    const transakUrl = `${baseUrl}?${params.toString()}`;
-    window.open(transakUrl, '_blank', 'width=450,height=700');
+    const onramperUrl = `${baseUrl}?${params.toString()}`;
+    window.open(onramperUrl, '_blank', 'width=450,height=700');
   };
 
   return (
@@ -79,25 +77,44 @@ const FiatOnramp = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-3">
               <CreditCard className="h-10 w-10 text-primary" />
-              Buy Crypto
+              {mode === 'buy' ? 'Buy Crypto' : 'Sell Crypto'}
             </h1>
-            <p className="text-muted-foreground">Purchase crypto with card or bank transfer via Transak</p>
+            <p className="text-muted-foreground">
+              {mode === 'buy' 
+                ? 'Purchase crypto with card or bank transfer' 
+                : 'Convert crypto to fiat currency'}
+            </p>
           </div>
+
+          <Tabs value={mode} onValueChange={(v) => setMode(v as 'buy' | 'sell')} className="mb-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="buy" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Buy Crypto
+              </TabsTrigger>
+              <TabsTrigger value="sell" className="flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4" />
+                Sell Crypto
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2">
                 <Wallet className="h-5 w-5" />
-                Fiat to Crypto
+                {mode === 'buy' ? 'Fiat to Crypto' : 'Crypto to Fiat'}
               </CardTitle>
               <CardDescription>
-                Buy BTC, ETH, USDT, and more with Visa, Mastercard, Apple Pay, or bank transfer
+                {mode === 'buy' 
+                  ? 'Best rates from 30+ providers including Stripe, Revolut, MoonPay'
+                  : 'Cash out your crypto to bank account or card'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Amount & Fiat Currency */}
               <div className="space-y-2">
-                <Label>You Pay</Label>
+                <Label>{mode === 'buy' ? 'You Pay' : 'You Receive'}</Label>
                 <div className="flex gap-2">
                   <Select value={fiatCurrency} onValueChange={setFiatCurrency}>
                     <SelectTrigger className="w-32">
@@ -106,7 +123,7 @@ const FiatOnramp = () => {
                     <SelectContent>
                       {FIAT_CURRENCIES.map(f => (
                         <SelectItem key={f.code} value={f.code}>
-                          {f.symbol} {f.code}
+                          {f.symbol} {f.code.toUpperCase()}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -120,12 +137,12 @@ const FiatOnramp = () => {
                     min="20"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Minimum: $20 equivalent</p>
+                <p className="text-xs text-muted-foreground">Minimum varies by provider (~$20)</p>
               </div>
 
               {/* Crypto Selection */}
               <div className="space-y-2">
-                <Label>You Receive</Label>
+                <Label>{mode === 'buy' ? 'You Receive' : 'You Send'}</Label>
                 <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
                   <SelectTrigger>
                     <SelectValue />
@@ -133,7 +150,7 @@ const FiatOnramp = () => {
                   <SelectContent>
                     {CRYPTO_OPTIONS.map(c => (
                       <SelectItem key={`${c.ticker}-${c.network}`} value={`${c.ticker}-${c.network}`}>
-                        {c.ticker} - {c.name} ({c.networkName})
+                        {c.ticker.toUpperCase()} - {c.name} ({c.networkName})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -144,24 +161,28 @@ const FiatOnramp = () => {
               <div className="space-y-2">
                 <Label>Your Wallet Address (Optional)</Label>
                 <Input
-                  placeholder={`Enter your ${selectedCryptoDetails?.ticker || 'crypto'} wallet address`}
+                  placeholder={`Enter your ${selectedCryptoDetails?.ticker.toUpperCase() || 'crypto'} wallet address`}
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Leave empty to enter in Transak widget, or pre-fill to skip that step
+                  {mode === 'buy' 
+                    ? 'Leave empty to enter in widget, or pre-fill to skip that step'
+                    : 'Address to send crypto from (you\'ll confirm in widget)'}
                 </p>
               </div>
 
-              {/* Buy Button */}
+              {/* Action Button */}
               <Button 
                 className="w-full" 
                 size="lg" 
-                onClick={openTransak}
-                disabled={!fiatAmount || parseFloat(fiatAmount) < 20}
+                onClick={openOnramper}
+                disabled={!fiatAmount || parseFloat(fiatAmount) < 10}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
-                Buy {selectedCryptoDetails?.ticker} with {fiatCurrency}
+                {mode === 'buy' 
+                  ? `Buy ${selectedCryptoDetails?.ticker.toUpperCase()} with ${fiatCurrency.toUpperCase()}`
+                  : `Sell ${selectedCryptoDetails?.ticker.toUpperCase()} for ${fiatCurrency.toUpperCase()}`}
                 <ExternalLink className="h-4 w-4 ml-2" />
               </Button>
 
@@ -169,9 +190,24 @@ const FiatOnramp = () => {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  You'll be redirected to Transak's secure payment page. KYC verification may be required for first-time purchases.
+                  Onramper aggregates 30+ providers to find you the best rates. KYC may be required on first purchase.
                 </AlertDescription>
               </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Providers Section */}
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 text-sm">Supported Providers</h3>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                {['MoonPay', 'Transak', 'Ramp', 'Stripe', 'Revolut', 'Coinbase', 'Banxa', 'Mercuryo', 'Simplex'].map(provider => (
+                  <span key={provider} className="bg-secondary/50 px-2 py-1 rounded">
+                    {provider}
+                  </span>
+                ))}
+                <span className="bg-secondary/50 px-2 py-1 rounded">+20 more</span>
+              </div>
             </CardContent>
           </Card>
 
@@ -180,22 +216,22 @@ const FiatOnramp = () => {
             <Card className="bg-secondary/30">
               <CardContent className="p-4 text-center">
                 <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                <h3 className="font-semibold mb-1">Secure Payments</h3>
-                <p className="text-xs text-muted-foreground">Visa, Mastercard, Apple Pay, Google Pay</p>
+                <h3 className="font-semibold mb-1">Best Rates</h3>
+                <p className="text-xs text-muted-foreground">Compares 30+ providers in real-time</p>
               </CardContent>
             </Card>
             <Card className="bg-secondary/30">
               <CardContent className="p-4 text-center">
                 <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                <h3 className="font-semibold mb-1">136+ Cryptos</h3>
+                <h3 className="font-semibold mb-1">800+ Cryptos</h3>
                 <p className="text-xs text-muted-foreground">BTC, ETH, USDT, SOL, and more</p>
               </CardContent>
             </Card>
             <Card className="bg-secondary/30">
               <CardContent className="p-4 text-center">
                 <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                <h3 className="font-semibold mb-1">64+ Countries</h3>
-                <p className="text-xs text-muted-foreground">Global coverage with local payments</p>
+                <h3 className="font-semibold mb-1">130+ Payment Methods</h3>
+                <p className="text-xs text-muted-foreground">Cards, bank transfer, Apple Pay</p>
               </CardContent>
             </Card>
           </div>
@@ -204,11 +240,11 @@ const FiatOnramp = () => {
           <Card className="mt-6">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Powered by Transak</span>
+                <span className="text-sm text-muted-foreground">Powered by Onramper</span>
                 <Button variant="ghost" size="sm" asChild>
-                  <a href="https://transak.com" target="_blank" rel="noopener noreferrer">
+                  <a href="https://onramper.com" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 mr-1" />
-                    Transak.com
+                    Onramper.com
                   </a>
                 </Button>
               </div>
