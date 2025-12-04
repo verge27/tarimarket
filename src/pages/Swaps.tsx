@@ -92,17 +92,33 @@ const Swaps = () => {
   }, []);
 
   const fetchCoins = async () => {
-    // Fetch all coins (Supabase default limit is 1000, we need more)
-    const { data, error } = await supabase
+    // First fetch popular coins specifically to ensure they're loaded
+    const popularTickers = POPULAR_COINS.map(p => p.ticker.toLowerCase());
+    
+    const { data: popularData, error: popularError } = await supabase
+      .from('coins')
+      .select('*')
+      .or(popularTickers.map(t => `ticker.ilike.${t}`).join(','));
+    
+    // Then fetch all other coins
+    const { data: allData, error: allError } = await supabase
       .from('coins')
       .select('*')
       .order('ticker')
-      .limit(5000);
-    if (error) {
-      console.error('Error fetching coins:', error);
+      .limit(2000);
+    
+    if (popularError || allError) {
+      console.error('Error fetching coins:', popularError || allError);
       toast({ title: 'Error', description: 'Failed to load coins', variant: 'destructive' });
     } else {
-      setCoins(data || []);
+      // Combine, removing duplicates (popular coins take precedence)
+      const popularSet = new Set(popularData?.map(c => `${c.ticker}-${c.network}`) || []);
+      const otherCoins = allData?.filter(c => !popularSet.has(`${c.ticker}-${c.network}`)) || [];
+      const combined = [...(popularData || []), ...otherCoins];
+      
+      console.log('Popular coins loaded:', popularData?.length);
+      console.log('Total coins:', combined.length);
+      setCoins(combined);
     }
     setLoading(false);
   };
@@ -133,18 +149,21 @@ const Swaps = () => {
 
   // Get popular coins with their preferred networks
   const getPriorityCoins = () => {
-    return POPULAR_COINS.map(pc => {
-      // Find the exact ticker+network match first
-      let coin = coins.find(c => 
-        c.ticker.toUpperCase() === pc.ticker.toUpperCase() && 
-        c.network.toUpperCase() === pc.network.toUpperCase()
+    const results: (Coin & { preferredLabel: string })[] = [];
+    
+    for (const pc of POPULAR_COINS) {
+      // Find exact ticker+network match (case-insensitive)
+      const coin = coins.find(c => 
+        c.ticker.toLowerCase() === pc.ticker.toLowerCase() && 
+        c.network.toLowerCase() === pc.network.toLowerCase()
       );
-      // Fallback to just ticker if exact match not found
-      if (!coin) {
-        coin = coins.find(c => c.ticker.toUpperCase() === pc.ticker.toUpperCase());
+      
+      if (coin) {
+        results.push({ ...coin, preferredLabel: pc.label });
       }
-      return coin ? { ...coin, preferredLabel: pc.label } : null;
-    }).filter((c): c is Coin & { preferredLabel: string } => c !== null);
+    }
+    
+    return results;
   };
 
   // Get coins that are not in the popular list
