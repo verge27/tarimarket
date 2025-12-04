@@ -80,6 +80,7 @@ const Swaps = () => {
   const [trade, setTrade] = useState<TradeResponse | null>(null);
   const [executingTrade, setExecutingTrade] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hasFetchedRates, setHasFetchedRates] = useState(false);
 
   useEffect(() => {
     fetchCoins();
@@ -190,6 +191,7 @@ const Swaps = () => {
     }
     setRates([]);
     setSelectedProvider(null);
+    setHasFetchedRates(false);
   };
 
   const handleToCoinChange = (ticker: string) => {
@@ -208,6 +210,7 @@ const Swaps = () => {
     }
     setRates([]);
     setSelectedProvider(null);
+    setHasFetchedRates(false);
   };
 
 
@@ -220,6 +223,7 @@ const Swaps = () => {
     setLoadingRates(true);
     setRates([]);
     setSelectedProvider(null);
+    setHasFetchedRates(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('trocador-new-rate', {
@@ -247,6 +251,7 @@ const Swaps = () => {
       console.error('Error fetching rates:', error);
       toast({ title: 'Error', description: 'Failed to fetch rates', variant: 'destructive' });
     }
+    setHasFetchedRates(true);
     setLoadingRates(false);
   };
 
@@ -540,7 +545,14 @@ const Swaps = () => {
                   {rates.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       <ArrowRightLeft className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                      <p>No rates yet</p>
+                      {hasFetchedRates ? (
+                        <>
+                          <p className="font-medium text-foreground">No providers available</p>
+                          <p className="text-sm mt-1">This swap pair is not currently supported by any exchange providers. Try a different coin or network combination.</p>
+                        </>
+                      ) : (
+                        <p>No rates yet</p>
+                      )}
                     </div>
                   ) : (
                     <>
