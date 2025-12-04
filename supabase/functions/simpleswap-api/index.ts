@@ -8,6 +8,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting: 30 requests per minute per IP (10 for create_exchange)
+const RATE_LIMIT_DEFAULT = 30;
+const RATE_LIMIT_EXCHANGE = 10;
+const RATE_WINDOW_MS = 60 * 1000;
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const exchangeRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+const checkRateLimit = (ip: string, isExchange: boolean): boolean => {
+  const now = Date.now();
+  const map = isExchange ? exchangeRateLimitMap : rateLimitMap;
+  const limit = isExchange ? RATE_LIMIT_EXCHANGE : RATE_LIMIT_DEFAULT;
+  const record = map.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    map.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return true;
+  }
+  
+  if (record.count >= limit) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+};
+
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+};
+
 // Input validation helpers
 const isValidTicker = (value: unknown): value is string => 
   typeof value === 'string' && value.length >= 1 && value.length <= 20 && /^[a-zA-Z0-9]+$/.test(value);
@@ -45,6 +77,17 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid or missing action' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Rate limiting check (stricter for create_exchange)
+    const clientIP = getClientIP(req);
+    const isExchangeAction = action === 'create_exchange';
+    if (!checkRateLimit(clientIP, isExchangeAction)) {
+      console.warn(`Rate limit exceeded for IP: ${clientIP}, action: ${action}`);
+      return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' },
       });
     }
 
