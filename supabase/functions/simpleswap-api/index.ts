@@ -37,22 +37,22 @@ serve(async (req) => {
         break;
 
       case 'get_min_amount':
-        // V3 API - get ranges (min/max)
+        // V3 API - get ranges (min/max) - uses tickerFrom/tickerTo
         const rangeParams = new URLSearchParams({
-          currencyFrom: params.currency_from,
+          tickerFrom: params.currency_from,
           networkFrom: params.network_from || 'mainnet',
-          currencyTo: params.currency_to,
+          tickerTo: params.currency_to,
           networkTo: params.network_to || 'mainnet',
         });
         url = `${BASE_URL}/v3/ranges?${rangeParams}`;
         break;
 
       case 'get_estimated':
-        // V3 API - get estimate
+        // V3 API - get estimate - uses tickerFrom/tickerTo
         const estParams = new URLSearchParams({
-          currencyFrom: params.currency_from,
+          tickerFrom: params.currency_from,
           networkFrom: params.network_from || 'mainnet',
-          currencyTo: params.currency_to,
+          tickerTo: params.currency_to,
           networkTo: params.network_to || 'mainnet',
           amount: params.amount,
           fixed: 'false',
@@ -70,9 +70,9 @@ serve(async (req) => {
             'x-api-key': SIMPLESWAP_API_KEY!,
           },
           body: JSON.stringify({
-            currencyFrom: params.currency_from,
+            tickerFrom: params.currency_from,
             networkFrom: params.network_from || 'mainnet',
-            currencyTo: params.currency_to,
+            tickerTo: params.currency_to,
             networkTo: params.network_to || 'mainnet',
             amount: params.amount,
             addressTo: params.address_to,
