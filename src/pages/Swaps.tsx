@@ -583,6 +583,22 @@ const Swaps = () => {
                         </Select>
                       )}
                     </div>
+                    {/* Estimated Receive Amount */}
+                    {rates.length > 0 && amount && parseFloat(amount) > 0 && (
+                      <div className="mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                        <p className="text-xs text-muted-foreground mb-1">Estimated receive (best rate)</p>
+                        <p className="text-lg font-semibold text-primary">
+                          ~{(() => {
+                            const bestRate = rates[0];
+                            const originalAmount = parseFloat(bestRate.amount_to);
+                            const ratio = originalAmount / parseFloat(amount);
+                            const estimated = parseFloat(amount) * ratio;
+                            return estimated.toFixed(6);
+                          })()} {toCoin.toUpperCase()}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">via {rates[0].provider}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Receive Address */}
