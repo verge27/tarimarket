@@ -537,7 +537,7 @@ const FiatOfframp = () => {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Powered by SimpleSwap</span>
                 <Button variant="ghost" size="sm" asChild>
-                  <a href="https://simpleswap.io" target="_blank" rel="noopener noreferrer">
+                  <a href="https://simpleswap.io/?ref=9996a1ef14d0" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 mr-1" />
                     SimpleSwap.io
                   </a>
