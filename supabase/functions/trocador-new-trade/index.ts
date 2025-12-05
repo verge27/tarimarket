@@ -225,12 +225,19 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Trade created successfully');
+    console.log('Trade created successfully, response:', JSON.stringify(data));
 
     // Log successful API call
     await logApiCall('trocador-new-trade', '/new_trade', 'GET', statusCode, Date.now() - startTime, null);
     
-    return new Response(JSON.stringify(data), {
+    // Normalize response - Trocador uses 'address_provider' but we expect 'address'
+    const normalizedData = {
+      ...data,
+      address: data.address || data.address_provider || data.input_address || '',
+      address_memo: data.address_memo || data.memo || data.tag || '',
+    };
+    
+    return new Response(JSON.stringify(normalizedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
