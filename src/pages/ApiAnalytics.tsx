@@ -6,7 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Activity, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Activity, Clock, AlertTriangle, CheckCircle, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { Navigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface ApiCallLog {
   id: string;
@@ -20,6 +24,9 @@ interface ApiCallLog {
 }
 
 const ApiAnalytics = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
+
   const { data: logs, isLoading } = useQuery({
     queryKey: ["api-call-logs"],
     queryFn: async () => {
@@ -32,8 +39,54 @@ const ApiAnalytics = () => {
       if (error) throw error;
       return data as ApiCallLog[];
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
+    enabled: isAdmin,
   });
+
+  // Show loading while checking auth
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
+          <div className="text-center">
+            <Skeleton className="h-8 w-48 mx-auto mb-4" />
+            <Skeleton className="h-4 w-64 mx-auto" />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Redirect to auth if not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Show access denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-6 text-center">
+              <ShieldAlert className="h-16 w-16 mx-auto text-destructive mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+              <p className="text-muted-foreground mb-4">
+                You don't have permission to view this page. Admin access is required.
+              </p>
+              <Button variant="outline" onClick={() => window.history.back()}>
+                Go Back
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // Calculate stats
   const totalCalls = logs?.length || 0;
@@ -75,7 +128,10 @@ const ApiAnalytics = () => {
       <Navbar />
 
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Trocador API Analytics</h1>
+        <div className="flex items-center gap-2 mb-8">
+          <h1 className="text-3xl font-bold">Trocador API Analytics</h1>
+          <Badge variant="secondary">Admin Only</Badge>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -130,7 +186,7 @@ const ApiAnalytics = () => {
               {isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
-                <div className="text-2xl font-bold">{avgResponseTime}ms</div>
+                <div className="text-2xl font-bold">{avgResponseTime || 0}ms</div>
               )}
             </CardContent>
           </Card>
@@ -205,6 +261,8 @@ const ApiAnalytics = () => {
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
+            ) : logs?.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No API calls logged yet. Data will appear here as users make swaps.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
