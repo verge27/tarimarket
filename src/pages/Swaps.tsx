@@ -290,14 +290,22 @@ const Swaps = () => {
     
     setLoadingHistory(true);
     try {
-      const { data, error } = await supabase
-        .from('swap_history')
-        .select('*')
-        .in('trade_id', savedTradeIds)
-        .order('created_at', { ascending: false });
+      // Use security definer function to fetch swaps by trade_id
+      // This allows anonymous users to view their swaps if they know the trade_id
+      const results: SwapHistoryItem[] = [];
       
-      if (error) throw error;
-      setSwapHistory(data || []);
+      for (const tradeId of savedTradeIds) {
+        const { data, error } = await supabase
+          .rpc('get_swap_by_trade_id', { p_trade_id: tradeId });
+        
+        if (!error && data && data.length > 0) {
+          results.push(data[0]);
+        }
+      }
+      
+      // Sort by created_at descending
+      results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setSwapHistory(results);
     } catch (error) {
       console.error('Error fetching swap history:', error);
     }
