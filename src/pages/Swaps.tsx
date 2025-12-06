@@ -147,9 +147,26 @@ const Swaps = () => {
         if (response.ok) {
           const statusData = await response.json();
           if (statusData.status && statusData.status !== trade.status) {
-            setTrade(prev => prev ? { ...prev, status: statusData.status } : null);
+            const newStatus = statusData.status;
+            setTrade(prev => prev ? { ...prev, status: newStatus } : null);
             // Also refresh history to update stored status
             fetchSwapHistory();
+            
+            // Show toast notification for status change
+            const statusMessages: Record<string, { title: string; description: string; variant?: 'default' | 'destructive' }> = {
+              'confirming': { title: '⏳ Deposit Detected', description: 'Your deposit is being confirmed on the blockchain' },
+              'sending': { title: '🚀 Coins Being Sent', description: 'The exchange is sending your coins!' },
+              'finished': { title: '✅ Swap Complete!', description: 'Your swap has been completed successfully' },
+              'failed': { title: 'Swap Failed', description: 'Something went wrong. Contact Trocador support.', variant: 'destructive' },
+              'expired': { title: 'Swap Expired', description: 'The swap expired before deposit was received', variant: 'destructive' },
+              'halted': { title: 'Swap Halted', description: 'There was an issue. Contact Trocador support.', variant: 'destructive' },
+              'refunded': { title: 'Swap Refunded', description: 'The exchange has refunded your deposit' },
+            };
+            
+            const msg = statusMessages[newStatus.toLowerCase()];
+            if (msg) {
+              toast({ title: msg.title, description: msg.description, variant: msg.variant });
+            }
           }
         }
       } catch (error) {
@@ -188,10 +205,25 @@ const Swaps = () => {
           if (response.ok) {
             const statusData = await response.json();
             if (statusData.status && statusData.status !== swap.status) {
+              const newStatus = statusData.status;
               // Update local state
               setSwapHistory(prev => 
-                prev.map(s => s.trade_id === swap.trade_id ? { ...s, status: statusData.status } : s)
+                prev.map(s => s.trade_id === swap.trade_id ? { ...s, status: newStatus } : s)
               );
+              
+              // Show toast for completed/failed swaps in history
+              if (newStatus.toLowerCase() === 'finished') {
+                toast({ 
+                  title: '✅ Swap Complete!', 
+                  description: `Your ${swap.from_coin.toUpperCase()} → ${swap.to_coin.toUpperCase()} swap is done` 
+                });
+              } else if (['failed', 'expired', 'halted'].includes(newStatus.toLowerCase())) {
+                toast({ 
+                  title: 'Swap Issue', 
+                  description: `${swap.from_coin.toUpperCase()} → ${swap.to_coin.toUpperCase()} swap: ${newStatus}`,
+                  variant: 'destructive'
+                });
+              }
             }
           }
         } catch (error) {
