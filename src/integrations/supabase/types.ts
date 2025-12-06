@@ -143,7 +143,7 @@ export type Database = {
           to_coin: string
           to_network: string
           trade_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount: string
@@ -159,7 +159,7 @@ export type Database = {
           to_coin: string
           to_network: string
           trade_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           amount?: string
@@ -175,7 +175,7 @@ export type Database = {
           to_coin?: string
           to_network?: string
           trade_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -205,6 +205,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_swap_by_trade_id: {
+        Args: { p_trade_id: string }
+        Returns: {
+          amount: string
+          created_at: string
+          from_coin: string
+          from_network: string
+          id: string
+          provider: string
+          provider_address: string
+          provider_memo: string | null
+          receive_address: string
+          status: string | null
+          to_coin: string
+          to_network: string
+          trade_id: string
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "swap_history"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
