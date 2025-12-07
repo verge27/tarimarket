@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.simpleswap-api]
 verify_jwt = false
+
+[functions.nanogpt-tts]
+verify_jwt = false
