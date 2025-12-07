@@ -48,7 +48,7 @@ serve(async (req) => {
     const selectedVoice = kokoroVoices[voice] || 'af_bella';
 
     // Proxy to NanoGPT TTS endpoint
-    const response = await fetch('https://nano-gpt.com/api/tts', {
+    const response = await fetch('https://nano-gpt.com/api/text-to-speech', {
       method: 'POST',
       headers: {
         'x-api-key': NANOGPT_API_KEY,
