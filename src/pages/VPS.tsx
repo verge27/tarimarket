@@ -277,11 +277,20 @@ const VPS = () => {
       if (response.ok) {
         try {
           const data = JSON.parse(text);
-          setFundingAddress(data.address || '');
-          setFundingXmrAmount(data.amount || '');
-          setFundingAmount(amountUsd);
-        } catch {
-          throw new Error(text || 'Invalid response from server');
+          // Parse payment_uri: monero:ADDRESS?tx_amount=AMOUNT
+          const paymentUri = data.invoice?.payment_uri || '';
+          const addressMatch = paymentUri.match(/monero:([^?]+)/);
+          const amountMatch = paymentUri.match(/tx_amount=([0-9.]+)/);
+          
+          if (addressMatch && amountMatch) {
+            setFundingAddress(addressMatch[1]);
+            setFundingXmrAmount(amountMatch[1]);
+            setFundingAmount(amountUsd);
+          } else {
+            throw new Error('Invalid payment URI format');
+          }
+        } catch (e: any) {
+          throw new Error(e.message || 'Invalid response from server');
         }
       } else {
         throw new Error(text || 'Failed to get funding address');
