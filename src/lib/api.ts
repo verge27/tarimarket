@@ -1,5 +1,7 @@
 // 0xNull Backend API Client
-const API_BASE_URL = 'https://api.0xnull.io';
+// Use Supabase Edge Function as proxy to avoid CORS issues
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const PROXY_URL = `${SUPABASE_URL}/functions/v1/0xnull-proxy`;
 
 interface ApiResponse<T> {
   data?: T;
@@ -115,10 +117,12 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    // Build proxy URL with path parameter
+    const proxyUrl = new URL(PROXY_URL);
+    proxyUrl.searchParams.set('path', endpoint);
     
     try {
-      const response = await fetch(url, {
+      const response = await fetch(proxyUrl.toString(), {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -219,14 +223,18 @@ class ApiClient {
       return { error: 'No token set' };
     }
     
+    // For file uploads, we need to use the proxy differently
+    // Build proxy URL for voice clone
+    const proxyUrl = new URL(PROXY_URL);
+    proxyUrl.searchParams.set('path', '/api/voice/clone');
+    
     const formData = new FormData();
     formData.append('token', this.token);
     formData.append('audio', audio_file);
     formData.append('name', name);
 
-    const url = `${API_BASE_URL}/api/voice/clone`;
     try {
-      const response = await fetch(url, {
+      const response = await fetch(proxyUrl.toString(), {
         method: 'POST',
         body: formData,
       });
@@ -282,7 +290,10 @@ class ApiClient {
       throw new Error('No token set');
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const proxyUrl = new URL(PROXY_URL);
+    proxyUrl.searchParams.set('path', endpoint);
+
+    const response = await fetch(proxyUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: this.token, messages, stream: true }),
