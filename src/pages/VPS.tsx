@@ -203,7 +203,7 @@ const VPS = () => {
     setFundingAddress('');
     setFundingXmrAmount('');
     setFundingAmount(null);
-    setSelectedFundAmount(25);
+    setSelectedFundAmount(100); // Min $100 for new tokens
     setCustomFundAmount('');
   };
 
@@ -630,8 +630,11 @@ const VPS = () => {
               
               {!fundingAddress ? (
                 <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Note: New tokens require a minimum $100 initial deposit.
+                  </p>
                   <div className="grid grid-cols-4 gap-2">
-                    {[10, 25, 50, 100].map((amount) => (
+                    {[100, 150, 200, 250].map((amount) => (
                       <Button
                         key={amount}
                         variant={selectedFundAmount === amount ? 'default' : 'outline'}
