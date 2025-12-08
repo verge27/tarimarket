@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Volume2, Play, Pause, Download, Loader2, Mic, Shield, Zap, Globe } from "lucide-react";
 import { toast } from "sonner";
 import ChatWidget from "@/components/ChatWidget";
+import { useToken } from "@/hooks/useToken";
+import { TokenRequired } from "@/components/TokenManager";
 
 const voices = [
   { id: "bella", name: "Bella", description: "Warm and friendly" },
@@ -17,6 +19,11 @@ const voices = [
   { id: "sky", name: "Sky", description: "Bright and energetic" },
   { id: "adam", name: "Adam", description: "Deep and confident" },
   { id: "michael", name: "Michael", description: "Calm and authoritative" },
+];
+
+const tiers = [
+  { id: "standard", name: "Standard", price: "$0.15/1k chars", description: "Fast generation" },
+  { id: "ultra", name: "Ultra", price: "$0.25/1k chars", description: "Higher quality" },
 ];
 
 const features = [
@@ -38,17 +45,35 @@ const features = [
   {
     icon: Mic,
     title: "Voice Cloning",
-    description: "Coming soon: Clone any voice with just 10 seconds of audio.",
+    description: "Clone any voice with just 10 seconds of audio ($2.00).",
   },
 ];
 
 const Voice = () => {
+  const { hasToken, updateBalance } = useToken();
   const [text, setText] = useState("");
   const [voice, setVoice] = useState("bella");
+  const [tier, setTier] = useState<"standard" | "ultra">("standard");
   const [isLoading, setIsLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [estimatedCost, setEstimatedCost] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const calculateCost = (charCount: number, selectedTier: "standard" | "ultra") => {
+    const rate = selectedTier === "standard" ? 0.15 : 0.25;
+    return (charCount / 1000) * rate;
+  };
+
+  const handleTextChange = (newText: string) => {
+    setText(newText);
+    setEstimatedCost(calculateCost(newText.length, tier));
+  };
+
+  const handleTierChange = (newTier: "standard" | "ultra") => {
+    setTier(newTier);
+    setEstimatedCost(calculateCost(text.length, newTier));
+  };
 
   const generateSpeech = async () => {
     if (!text.trim()) {
@@ -72,7 +97,7 @@ const Voice = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text, voice }),
+          body: JSON.stringify({ text, voice, tier }),
         }
       );
 
@@ -138,100 +163,131 @@ const Voice = () => {
 
         {/* TTS Interface */}
         <section className="py-12 container mx-auto px-4">
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Volume2 className="h-5 w-5" />
-                Generate Speech
-              </CardTitle>
-              <CardDescription>
-                Enter your text below and select a voice to generate audio
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Textarea
-                  placeholder="Enter the text you want to convert to speech..."
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  className="min-h-[150px] resize-none"
-                  maxLength={5000}
-                />
-                <p className="text-xs text-muted-foreground mt-1 text-right">
-                  {text.length}/5000 characters
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Voice</label>
-                <Select value={voice} onValueChange={setVoice}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voices.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        <span className="font-medium">{v.name}</span>
-                        <span className="text-muted-foreground ml-2">
-                          — {v.description}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={generateSpeech}
-                disabled={isLoading || !text.trim()}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="h-4 w-4 mr-2" />
-                    Generate Speech
-                  </>
-                )}
-              </Button>
-
-              {audioUrl && (
-                <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
-                  <audio
-                    ref={audioRef}
-                    src={audioUrl}
-                    onEnded={() => setIsPlaying(false)}
-                    className="hidden"
+          <TokenRequired>
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Volume2 className="h-5 w-5" />
+                  Generate Speech
+                </CardTitle>
+                <CardDescription>
+                  Enter your text below and select a voice to generate audio
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Textarea
+                    placeholder="Enter the text you want to convert to speech..."
+                    value={text}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    className="min-h-[150px] resize-none"
+                    maxLength={5000}
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={togglePlayback}
-                  >
-                    {isPlaying ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-0 transition-all" />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>
+                      {text.length > 0 && (
+                        <>Est. cost: <span className="text-primary font-medium">${estimatedCost.toFixed(3)}</span></>
+                      )}
+                    </span>
+                    <span>{text.length}/5000 characters</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={downloadAudio}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {/* Tier Selector */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Quality Tier</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {tiers.map((t) => (
+                      <Button
+                        key={t.id}
+                        variant={tier === t.id ? "default" : "outline"}
+                        className="h-auto py-3 flex-col items-start"
+                        onClick={() => handleTierChange(t.id as "standard" | "ultra")}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="font-semibold">{t.name}</span>
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {t.price}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1">{t.description}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Voice Selector */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Voice</label>
+                  <Select value={voice} onValueChange={setVoice}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voices.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          <span className="font-medium">{v.name}</span>
+                          <span className="text-muted-foreground ml-2">
+                            — {v.description}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={generateSpeech}
+                  disabled={isLoading || !text.trim()}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Generate Speech {text.length > 0 && `($${estimatedCost.toFixed(3)})`}
+                    </>
+                  )}
+                </Button>
+
+                {audioUrl && (
+                  <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+                    <audio
+                      ref={audioRef}
+                      src={audioUrl}
+                      onEnded={() => setIsPlaying(false)}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={togglePlayback}
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                      <div className="h-full bg-primary w-0 transition-all" />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={downloadAudio}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TokenRequired>
         </section>
 
         {/* Features */}
