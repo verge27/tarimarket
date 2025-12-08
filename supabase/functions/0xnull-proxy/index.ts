@@ -67,13 +67,30 @@ serve(async (req) => {
     console.log(`Proxying ${req.method} to: ${targetUrl.toString()}`);
 
     const response = await fetch(targetUrl.toString(), fetchOptions);
-    const data = await response.text();
+    const responseText = await response.text();
+    
+    console.log(`Response status: ${response.status}, body preview: ${responseText.substring(0, 200)}`);
 
-    return new Response(data, {
+    // Ensure we always return valid JSON
+    let responseData: string;
+    try {
+      // Check if it's already valid JSON
+      JSON.parse(responseText);
+      responseData = responseText;
+    } catch {
+      // If not JSON, wrap it in a JSON error response
+      if (!response.ok) {
+        responseData = JSON.stringify({ error: responseText || 'Request failed', status: response.status });
+      } else {
+        responseData = JSON.stringify({ data: responseText });
+      }
+    }
+
+    return new Response(responseData, {
       status: response.status,
       headers: {
         ...corsHeaders,
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
+        'Content-Type': 'application/json',
       },
     });
   } catch (error) {
