@@ -5,13 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Wallet, Plus, Key, Copy, Check, AlertTriangle, Loader2, RefreshCw, Eye, LogOut } from 'lucide-react';
+import { Wallet, Plus, Key, Copy, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 
 export function TokenBadge() {
-  const { balance, hasToken, token, isLoading, refreshBalance, clearToken } = useToken();
+  const { balance, hasToken, token, isLoading, refreshBalance } = useToken();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -31,11 +30,6 @@ export function TokenBadge() {
     }
   };
 
-  const handleLogout = () => {
-    clearToken();
-    toast.success('Token cleared');
-  };
-
   if (!hasToken) {
     return <TokenDialog trigger={
       <Button variant="outline" size="sm" className="gap-2">
@@ -47,8 +41,9 @@ export function TokenBadge() {
 
   return (
     <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {/* Balance badge - click to view token */}
+      <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+        <DialogTrigger asChild>
           <Badge 
             variant="outline" 
             className="gap-1 cursor-pointer hover:bg-secondary/80 transition-colors"
@@ -60,26 +55,7 @@ export function TokenBadge() {
               <span>${balance?.toFixed(2) ?? '0.00'}</span>
             )}
           </Badge>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Balance
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowTokenDialog(true)}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Token
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-            <LogOut className="h-4 w-4 mr-2" />
-            Clear Token
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <TopupDialog />
-
-      {/* View Token Dialog */}
-      <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+        </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Your Token</DialogTitle>
@@ -104,7 +80,7 @@ export function TokenBadge() {
               <Input 
                 value={token || ''} 
                 readOnly 
-                className="font-mono text-sm"
+                className="font-mono text-xs"
               />
               <Button 
                 variant="outline" 
@@ -115,12 +91,19 @@ export function TokenBadge() {
               </Button>
             </div>
 
-            <Button onClick={() => setShowTokenDialog(false)} className="w-full">
-              Done
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleRefresh} className="flex-1">
+                Refresh Balance
+              </Button>
+              <Button onClick={() => setShowTokenDialog(false)} className="flex-1">
+                Done
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+      
+      <TopupDialog />
     </div>
   );
 }
