@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,21 +11,70 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useListings } from '@/hooks/useListings';
 import { listingSchema } from '@/lib/validation';
+import { useCurrencyConversion, SUPPORTED_CURRENCIES } from '@/hooks/useCurrencyConversion';
+import { Loader2 } from 'lucide-react';
 
 const NewListing = () => {
   const { user } = useAuth();
   const { createListing } = useListings();
+  const { convertToUsd, loading: conversionLoading } = useCurrencyConversion();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    priceUsd: '',
+    price: '',
+    priceCurrency: 'USD',
     category: 'Physical',
     imageUrl: '',
     stock: '',
-    shippingPriceUsd: '0'
+    shippingPrice: '',
+    shippingCurrency: 'USD'
   });
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
+  const [convertedShipping, setConvertedShipping] = useState<number | null>(null);
+
+  // Auto-convert price when currency or amount changes
+  useEffect(() => {
+    const convertPrice = async () => {
+      const amount = parseFloat(formData.price);
+      if (isNaN(amount) || amount <= 0) {
+        setConvertedPrice(null);
+        return;
+      }
+      
+      if (formData.priceCurrency === 'USD') {
+        setConvertedPrice(amount);
+      } else {
+        const usdAmount = await convertToUsd(amount, formData.priceCurrency);
+        setConvertedPrice(usdAmount);
+      }
+    };
+    
+    const debounce = setTimeout(convertPrice, 300);
+    return () => clearTimeout(debounce);
+  }, [formData.price, formData.priceCurrency, convertToUsd]);
+
+  // Auto-convert shipping when currency or amount changes
+  useEffect(() => {
+    const convertShipping = async () => {
+      const amount = parseFloat(formData.shippingPrice);
+      if (isNaN(amount) || amount < 0) {
+        setConvertedShipping(0);
+        return;
+      }
+      
+      if (formData.shippingCurrency === 'USD') {
+        setConvertedShipping(amount);
+      } else {
+        const usdAmount = await convertToUsd(amount, formData.shippingCurrency);
+        setConvertedShipping(usdAmount ?? 0);
+      }
+    };
+    
+    const debounce = setTimeout(convertShipping, 300);
+    return () => clearTimeout(debounce);
+  }, [formData.shippingPrice, formData.shippingCurrency, convertToUsd]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -34,12 +83,17 @@ const NewListing = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (convertedPrice === null || convertedPrice <= 0) {
+      toast.error('Please enter a valid price');
+      return;
+    }
+
     // Validate inputs
     try {
       listingSchema.parse({
         title: formData.title,
         description: formData.description,
-        priceUsd: parseFloat(formData.priceUsd),
+        priceUsd: convertedPrice,
         category: formData.category,
         imageUrl: formData.imageUrl || ''
       });
@@ -58,11 +112,11 @@ const NewListing = () => {
     const result = await createListing({
       title: formData.title,
       description: formData.description,
-      price_usd: parseFloat(formData.priceUsd),
+      price_usd: convertedPrice,
       category: formData.category,
       images: formData.imageUrl ? [formData.imageUrl] : [],
       stock: parseInt(formData.stock),
-      shipping_price_usd: parseFloat(formData.shippingPriceUsd),
+      shipping_price_usd: convertedShipping ?? 0,
       condition: 'new'
     });
 
@@ -72,6 +126,15 @@ const NewListing = () => {
       toast.success('Listing created successfully!');
       navigate('/sell');
     }
+  };
+
+  const getCurrencySymbol = (code: string) => {
+    const symbols: Record<string, string> = {
+      USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥',
+      CAD: 'C$', AUD: 'A$', CHF: 'Fr', INR: '₹', MXN: '$',
+      BRL: 'R$', RUB: '₽',
+    };
+    return symbols[code] || code;
   };
 
   return (
@@ -105,30 +168,100 @@ const NewListing = () => {
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="priceUsd">Price (USD) *</Label>
+              <div>
+                <Label>Price *</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={formData.priceCurrency} 
+                    onValueChange={(value) => setFormData({ ...formData, priceCurrency: value })}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD" className="font-semibold">USD ($)</SelectItem>
+                      <div className="px-2 py-1 text-xs text-muted-foreground">Fiat</div>
+                      {SUPPORTED_CURRENCIES.filter(c => c.type === 'fiat' && c.code !== 'USD').map(currency => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code} ({getCurrencySymbol(currency.code)})
+                        </SelectItem>
+                      ))}
+                      <div className="px-2 py-1 text-xs text-muted-foreground mt-1">Crypto</div>
+                      {SUPPORTED_CURRENCIES.filter(c => c.type === 'crypto').map(currency => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
-                    id="priceUsd"
                     type="number"
-                    step="0.01"
-                    value={formData.priceUsd}
-                    onChange={(e) => setFormData({ ...formData, priceUsd: e.target.value })}
+                    step="any"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="0.00"
+                    className="flex-1"
                   />
                 </div>
+                {formData.priceCurrency !== 'USD' && formData.price && (
+                  <div className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+                    {conversionLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : convertedPrice !== null ? (
+                      <>≈ ${convertedPrice.toFixed(2)} USD</>
+                    ) : (
+                      <span className="text-destructive">Conversion unavailable</span>
+                    )}
+                  </div>
+                )}
+              </div>
 
-                <div>
-                  <Label htmlFor="shippingPriceUsd">Shipping (USD)</Label>
+              <div>
+                <Label>Shipping</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={formData.shippingCurrency} 
+                    onValueChange={(value) => setFormData({ ...formData, shippingCurrency: value })}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD" className="font-semibold">USD ($)</SelectItem>
+                      <div className="px-2 py-1 text-xs text-muted-foreground">Fiat</div>
+                      {SUPPORTED_CURRENCIES.filter(c => c.type === 'fiat' && c.code !== 'USD').map(currency => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code} ({getCurrencySymbol(currency.code)})
+                        </SelectItem>
+                      ))}
+                      <div className="px-2 py-1 text-xs text-muted-foreground mt-1">Crypto</div>
+                      {SUPPORTED_CURRENCIES.filter(c => c.type === 'crypto').map(currency => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
-                    id="shippingPriceUsd"
                     type="number"
-                    step="0.01"
-                    value={formData.shippingPriceUsd}
-                    onChange={(e) => setFormData({ ...formData, shippingPriceUsd: e.target.value })}
+                    step="any"
+                    value={formData.shippingPrice}
+                    onChange={(e) => setFormData({ ...formData, shippingPrice: e.target.value })}
                     placeholder="0.00"
+                    className="flex-1"
                   />
                 </div>
+                {formData.shippingCurrency !== 'USD' && formData.shippingPrice && (
+                  <div className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+                    {conversionLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : convertedShipping !== null ? (
+                      <>≈ ${convertedShipping.toFixed(2)} USD</>
+                    ) : (
+                      <span className="text-destructive">Conversion unavailable</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -171,7 +304,7 @@ const NewListing = () => {
                 </p>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || (formData.priceCurrency !== 'USD' && convertedPrice === null)}>
                 {isSubmitting ? 'Creating...' : 'Create Listing'}
               </Button>
             </form>
