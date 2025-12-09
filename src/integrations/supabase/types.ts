@@ -265,6 +265,97 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          buyer_pk_user_id: string | null
+          buyer_user_id: string | null
+          completed_at: string | null
+          created_at: string
+          delivered_at: string | null
+          id: string
+          listing_id: string | null
+          notes: string | null
+          paid_at: string | null
+          quantity: number
+          seller_pk_user_id: string | null
+          seller_user_id: string | null
+          shipped_at: string | null
+          shipping_address: string | null
+          shipping_price_usd: number
+          status: string
+          total_price_usd: number
+          tracking_number: string | null
+          unit_price_usd: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_pk_user_id?: string | null
+          buyer_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          quantity?: number
+          seller_pk_user_id?: string | null
+          seller_user_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_price_usd?: number
+          status?: string
+          total_price_usd: number
+          tracking_number?: string | null
+          unit_price_usd: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_pk_user_id?: string | null
+          buyer_user_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          quantity?: number
+          seller_pk_user_id?: string | null
+          seller_user_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_price_usd?: number
+          status?: string
+          total_price_usd?: number
+          tracking_number?: string | null
+          unit_price_usd?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_buyer_pk_user_id_fkey"
+            columns: ["buyer_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "private_key_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_seller_pk_user_id_fkey"
+            columns: ["seller_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "private_key_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       private_key_users: {
         Row: {
           created_at: string
