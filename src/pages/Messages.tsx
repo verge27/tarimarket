@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageCircle, Loader2, Shield, Lock } from 'lucide-react';
+import { Send, MessageCircle, Loader2, Shield, Lock, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +14,12 @@ import { usePrivateKeyAuth } from '@/hooks/usePrivateKeyAuth';
 import { useMessages, useConversation } from '@/hooks/useMessages';
 import { usePGP } from '@/hooks/usePGP';
 import { PGPPassphraseDialog } from '@/components/PGPPassphraseDialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const Messages = () => {
   const { conversationId } = useParams();
@@ -34,10 +40,28 @@ const Messages = () => {
     ? conversations.find(c => c.id === conversationId)
     : conversations[0];
 
-  // Try to restore PGP session on mount
+  // Auto-setup encryption on first visit
   useEffect(() => {
-    restoreSession();
-  }, [restoreSession]);
+    const initPGP = async () => {
+      // Try to restore session first
+      const restored = restoreSession();
+      if (restored) return;
+
+      // If authenticated and no keys, prompt setup
+      if (isAuthenticated) {
+        const hasKeys = await checkHasKeys();
+        if (!hasKeys) {
+          // Auto-show setup dialog
+          setShowPGPDialog(true);
+        } else if (!isUnlocked) {
+          // Has keys but not unlocked, prompt to unlock
+          setShowPGPDialog(true);
+        }
+      }
+    };
+
+    initPGP();
+  }, [isAuthenticated, restoreSession, checkHasKeys, isUnlocked]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -96,20 +120,16 @@ const Messages = () => {
   const handleSend = async () => {
     if (!messageText.trim() || !activeConversation || sending) return;
     
-    // Check if we should send encrypted
+    // Require encryption - prompt if not unlocked
     if (!isUnlocked) {
-      // Check if user has keys set up
-      const hasKeys = await checkHasKeys();
-      if (hasKeys || !hasKeys) {
-        // Prompt to unlock/create keys for encryption
-        setShowPGPDialog(true);
-        return;
-      }
+      setShowPGPDialog(true);
+      toast.info('Please set up encryption first');
+      return;
     }
 
     setSending(true);
     
-    // Get recipient info for encryption
+    // Always send encrypted
     const recipientIds = getRecipientIds();
     const success = await sendEncryptedMessage(
       messageText,
@@ -245,16 +265,34 @@ const Messages = () => {
                       <h2 className="font-semibold">
                         {getOtherParticipant(activeConversation.participants)}
                       </h2>
-                      {getRecipientIds()?.recipientHasPGP ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-                          <Shield className="w-2.5 h-2.5" />
-                          PGP
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
-                          No PGP
-                        </span>
-                      )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {getRecipientIds()?.recipientHasPGP ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-500 border border-green-500/20 cursor-help">
+                                <Shield className="w-2.5 h-2.5" />
+                                PGP
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20 cursor-help">
+                                <ShieldOff className="w-2.5 h-2.5" />
+                                No PGP
+                              </span>
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[250px]">
+                            {getRecipientIds()?.recipientHasPGP ? (
+                              <p className="text-xs">
+                                <strong>End-to-end encrypted.</strong> This user has PGP encryption enabled. Messages are encrypted before sending and can only be read by the recipient.
+                              </p>
+                            ) : (
+                              <p className="text-xs">
+                                <strong>Recipient has no encryption.</strong> This user hasn't set up PGP yet. Messages will be stored encrypted but they won't be able to decrypt them until they set up their keys.
+                              </p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     {activeConversation.listing && (
                       <Link 
