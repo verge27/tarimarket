@@ -19,6 +19,7 @@ const Auth = () => {
   const { generateNewKeys, signInWithKey, privateKeyUser } = usePrivateKeyAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<{ privateKey: string; publicKey: string; keyId: string } | null>(null);
+  const [signedInKey, setSignedInKey] = useState<{ privateKey: string; keyId: string } | null>(null);
   const [privateKeyInput, setPrivateKeyInput] = useState('');
   const [keyCopied, setKeyCopied] = useState(false);
 
@@ -104,9 +105,26 @@ const Auth = () => {
     setIsLoading(true);
     const success = await signInWithKey(privateKeyInput);
     if (success) {
-      navigate('/');
+      // Don't navigate immediately - show confirmation with key copy
+      const { derivePublicKey, getKeyId } = await import('@/lib/crypto');
+      const publicKey = await derivePublicKey(privateKeyInput);
+      const keyId = getKeyId(publicKey);
+      setSignedInKey({ privateKey: privateKeyInput, keyId });
     }
     setIsLoading(false);
+  };
+
+  const copySignedInKey = () => {
+    if (signedInKey) {
+      navigator.clipboard.writeText(signedInKey.privateKey);
+      setKeyCopied(true);
+      toast.success('Private key copied!');
+      setTimeout(() => setKeyCopied(false), 3000);
+    }
+  };
+
+  const handleContinueAfterSignIn = () => {
+    navigate('/');
   };
 
   const copyPrivateKey = () => {
@@ -147,7 +165,50 @@ const Auth = () => {
               </TabsList>
 
               <TabsContent value="key" className="space-y-4">
-                {!generatedKey ? (
+                {signedInKey ? (
+                  <div className="space-y-4 py-4">
+                    <Alert className="border-green-500/50 bg-green-500/10">
+                      <Check className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-200">
+                        Successfully signed in! Save your key before continuing.
+                      </AlertDescription>
+                    </Alert>
+
+                    <div>
+                      <Label>Your Key ID</Label>
+                      <div className="font-mono text-lg text-primary">
+                        Anon_{signedInKey.keyId}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Private Key (keep secret!)</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          readOnly
+                          value={signedInKey.privateKey}
+                          className="font-mono text-xs"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={copySignedInKey}
+                          className={keyCopied ? 'text-green-500' : ''}
+                        >
+                          {keyCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={handleContinueAfterSignIn} 
+                      className="w-full"
+                      disabled={!keyCopied}
+                    >
+                      {keyCopied ? 'Continue to Marketplace' : 'Copy key first to continue'}
+                    </Button>
+                  </div>
+                ) : !generatedKey ? (
                   <>
                     <div className="text-sm text-muted-foreground space-y-2 py-4">
                       <p>
