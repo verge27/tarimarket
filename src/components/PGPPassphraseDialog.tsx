@@ -9,8 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { KeyRound, Lock, Shield } from 'lucide-react';
+import { KeyRound, Lock, Shield, Fingerprint, Check } from 'lucide-react';
 import { usePGP } from '@/hooks/usePGP';
+import { usePasskey } from '@/hooks/usePasskey';
 import { useToast } from '@/hooks/use-toast';
 
 interface PGPPassphraseDialogProps {
@@ -21,11 +22,15 @@ interface PGPPassphraseDialogProps {
 
 export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassphraseDialogProps) {
   const { checkHasKeys, generateKeys, unlockKeys, restoreSession } = usePGP();
+  const { isSupported: passkeySupported, hasPasskey, checkAvailability, registerPasskey, authenticateWithPasskey } = usePasskey();
   const { toast } = useToast();
   const [mode, setMode] = useState<'checking' | 'create' | 'unlock'>('checking');
   const [passphrase, setPassphrase] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+  const [passkeyRegistered, setPasskeyRegistered] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -36,12 +41,42 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
         return;
       }
 
+      // Check passkey availability
+      checkAvailability().then(setPasskeyAvailable);
+
       // Check if user has keys
       checkHasKeys().then(hasKeys => {
         setMode(hasKeys ? 'unlock' : 'create');
       });
     }
-  }, [open, checkHasKeys, restoreSession, onOpenChange, onUnlocked]);
+  }, [open, checkHasKeys, restoreSession, onOpenChange, onUnlocked, checkAvailability]);
+
+  // Try passkey authentication automatically when dialog opens in unlock mode
+  useEffect(() => {
+    if (open && mode === 'unlock' && hasPasskey && !loading) {
+      handlePasskeyUnlock();
+    }
+  }, [open, mode, hasPasskey]);
+
+  const handlePasskeyUnlock = async () => {
+    setLoading(true);
+    const retrievedPassphrase = await authenticateWithPasskey();
+    
+    if (retrievedPassphrase) {
+      const success = await unlockKeys(retrievedPassphrase);
+      if (success) {
+        toast({
+          title: 'Keys unlocked',
+          description: 'Authenticated with biometrics'
+        });
+        onOpenChange(false);
+        onUnlocked?.();
+        setLoading(false);
+        return;
+      }
+    }
+    setLoading(false);
+  };
 
   const handleCreate = async () => {
     if (passphrase.length < 8) {
@@ -64,9 +99,15 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
 
     setLoading(true);
     const success = await generateKeys(passphrase);
-    setLoading(false);
-
+    
     if (success) {
+      // Offer passkey setup if available
+      if (passkeyAvailable) {
+        setShowPasskeySetup(true);
+        setLoading(false);
+        return;
+      }
+      
       toast({
         title: 'PGP keys created',
         description: 'Your messages are now end-to-end encrypted'
@@ -82,14 +123,61 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
         variant: 'destructive'
       });
     }
+    setLoading(false);
+  };
+
+  const handleSetupPasskey = async () => {
+    setLoading(true);
+    const success = await registerPasskey(passphrase);
+    setLoading(false);
+    
+    if (success) {
+      setPasskeyRegistered(true);
+      toast({
+        title: 'Biometric unlock enabled',
+        description: 'You can now unlock with fingerprint or Face ID'
+      });
+      setTimeout(() => {
+        setPassphrase('');
+        setConfirmPassphrase('');
+        setShowPasskeySetup(false);
+        setPasskeyRegistered(false);
+        onOpenChange(false);
+        onUnlocked?.();
+      }, 1500);
+    } else {
+      toast({
+        title: 'Failed to set up biometrics',
+        description: 'You can still use your passphrase',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleSkipPasskey = () => {
+    toast({
+      title: 'PGP keys created',
+      description: 'Your messages are now end-to-end encrypted'
+    });
+    setPassphrase('');
+    setConfirmPassphrase('');
+    setShowPasskeySetup(false);
+    onOpenChange(false);
+    onUnlocked?.();
   };
 
   const handleUnlock = async () => {
     setLoading(true);
     const success = await unlockKeys(passphrase);
-    setLoading(false);
 
     if (success) {
+      // Offer passkey setup if available and not already set up
+      if (passkeyAvailable && !hasPasskey) {
+        setShowPasskeySetup(true);
+        setLoading(false);
+        return;
+      }
+      
       toast({
         title: 'Keys unlocked',
         description: 'You can now read and send encrypted messages'
@@ -104,6 +192,7 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
         variant: 'destructive'
       });
     }
+    setLoading(false);
   };
 
   return (
@@ -112,10 +201,12 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            {mode === 'create' ? 'Set Up Encryption' : 'Unlock Messages'}
+            {showPasskeySetup ? 'Enable Biometric Unlock' : mode === 'create' ? 'Set Up Encryption' : 'Unlock Messages'}
           </DialogTitle>
           <DialogDescription>
-            {mode === 'create'
+            {showPasskeySetup
+              ? 'Use fingerprint or Face ID to unlock your messages faster next time.'
+              : mode === 'create'
               ? 'Create a passphrase to protect your encryption keys. This passphrase is used to encrypt your private key.'
               : 'Enter your passphrase to unlock your encrypted messages.'}
           </DialogDescription>
@@ -124,6 +215,43 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
         {mode === 'checking' ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : showPasskeySetup ? (
+          <div className="space-y-4">
+            {passkeyRegistered ? (
+              <div className="flex flex-col items-center py-6 gap-3">
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <Check className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="font-medium text-green-500">Biometric unlock enabled!</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col items-center py-4 gap-3">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Fingerprint className="w-8 h-8 text-primary" />
+                  </div>
+                  <p className="text-sm text-center text-muted-foreground">
+                    Unlock with your device's biometric authentication instead of typing your passphrase.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleSetupPasskey}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? 'Setting up...' : 'Enable Biometric Unlock'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleSkipPasskey}
+                  className="w-full"
+                >
+                  Skip for now
+                </Button>
+              </>
+            )}
           </div>
         ) : mode === 'create' ? (
           <div className="space-y-4">
@@ -170,6 +298,25 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
           </div>
         ) : (
           <div className="space-y-4">
+            {hasPasskey && (
+              <div className="flex flex-col items-center py-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handlePasskeyUnlock}
+                  disabled={loading}
+                  className="w-full gap-2"
+                >
+                  <Fingerprint className="w-4 h-4" />
+                  {loading ? 'Authenticating...' : 'Unlock with Biometrics'}
+                </Button>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
+                  <div className="flex-1 h-px bg-border" />
+                  <span>or use passphrase</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="unlockPassphrase">Passphrase</Label>
               <div className="relative">
@@ -196,10 +343,12 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
           </div>
         )}
 
-        <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground mb-1">🔐 End-to-End Encryption</p>
-          <p>Your messages are encrypted with PGP. Only you and the recipient can read them.</p>
-        </div>
+        {!showPasskeySetup && (
+          <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">🔐 End-to-End Encryption</p>
+            <p>Your messages are encrypted with PGP. Only you and the recipient can read them.</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
