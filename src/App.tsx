@@ -50,7 +50,7 @@ const App = () => (
         <AuthProvider>
           <PrivateKeyAuthProvider>
             <TokenProvider>
-            <div className="pr-4 sm:pr-0">
+            <div className="pl-6 pr-4 sm:pl-0 sm:pr-0">
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/browse" element={<Browse />} />
