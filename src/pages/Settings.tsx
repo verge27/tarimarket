@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,9 +11,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { usePGP } from '@/hooks/usePGP';
 import { settingsSchema } from '@/lib/validation';
-import { Shield, Download, Key, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Shield, Download, Key, Copy, Check, AlertTriangle, Upload, FileKey } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PGPPassphraseDialog } from '@/components/PGPPassphraseDialog';
+import * as openpgp from 'openpgp';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -25,6 +33,13 @@ const Settings = () => {
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [copied, setCopied] = useState<'public' | 'private' | null>(null);
   const [showPGPDialog, setShowPGPDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importStep, setImportStep] = useState<'upload' | 'passphrase'>('upload');
+  const [importedKeys, setImportedKeys] = useState<{ publicKey: string; privateKey: string } | null>(null);
+  const [importPassphrase, setImportPassphrase] = useState('');
+  const [importing, setImporting] = useState(false);
+  const publicKeyInputRef = useRef<HTMLInputElement>(null);
+  const privateKeyInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -116,6 +131,92 @@ const Settings = () => {
     URL.revokeObjectURL(url);
     
     toast.success(`${type === 'public' ? 'Public' : 'Private'} key downloaded`);
+  };
+
+  const handleFileUpload = async (type: 'public' | 'private', file: File) => {
+    try {
+      const text = await file.text();
+      
+      if (type === 'public') {
+        // Validate it's a valid public key
+        try {
+          await openpgp.readKey({ armoredKey: text });
+          setImportedKeys(prev => ({ ...prev, publicKey: text, privateKey: prev?.privateKey || '' }));
+          toast.success('Public key loaded');
+        } catch {
+          toast.error('Invalid public key file');
+        }
+      } else {
+        // Validate it's a valid private key
+        try {
+          await openpgp.readPrivateKey({ armoredKey: text });
+          setImportedKeys(prev => ({ ...prev, privateKey: text, publicKey: prev?.publicKey || '' }));
+          toast.success('Private key loaded');
+        } catch {
+          toast.error('Invalid private key file');
+        }
+      }
+    } catch (e) {
+      toast.error('Failed to read file');
+    }
+  };
+
+  const handleImportKeys = async () => {
+    if (!importedKeys?.publicKey || !importedKeys?.privateKey || !user) {
+      toast.error('Please upload both public and private keys');
+      return;
+    }
+
+    if (!importPassphrase) {
+      toast.error('Please enter your passphrase');
+      return;
+    }
+
+    setImporting(true);
+
+    try {
+      // Verify the passphrase works with the private key
+      const privateKey = await openpgp.readPrivateKey({ armoredKey: importedKeys.privateKey });
+      
+      // Check if key is encrypted and try to decrypt with passphrase
+      if (!privateKey.isDecrypted()) {
+        try {
+          await openpgp.decryptKey({
+            privateKey,
+            passphrase: importPassphrase
+          });
+        } catch {
+          toast.error('Wrong passphrase for this private key');
+          setImporting(false);
+          return;
+        }
+      }
+
+      // Store keys in database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          pgp_public_key: importedKeys.publicKey,
+          pgp_encrypted_private_key: importedKeys.privateKey
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Keys imported successfully!');
+      setShowImportDialog(false);
+      setImportedKeys(null);
+      setImportPassphrase('');
+      setImportStep('upload');
+      
+      // Refresh page to show new keys
+      window.location.reload();
+    } catch (e) {
+      console.error('Import error:', e);
+      toast.error('Failed to import keys');
+    } finally {
+      setImporting(false);
+    }
   };
 
   if (loading) {
@@ -290,10 +391,16 @@ const Settings = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Set up PGP encryption to secure your messages
                 </p>
-                <Button onClick={() => setShowPGPDialog(true)}>
-                  <Key className="w-4 h-4 mr-2" />
-                  Set Up Encryption
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={() => setShowPGPDialog(true)}>
+                    <Key className="w-4 h-4 mr-2" />
+                    Create New Keys
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import Backup
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -304,10 +411,147 @@ const Settings = () => {
         open={showPGPDialog}
         onOpenChange={setShowPGPDialog}
         onUnlocked={() => {
-          // Refresh keys after setup
           window.location.reload();
         }}
       />
+
+      {/* Import Keys Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        setShowImportDialog(open);
+        if (!open) {
+          setImportStep('upload');
+          setImportedKeys(null);
+          setImportPassphrase('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileKey className="w-5 h-5 text-primary" />
+              Import PGP Keys
+            </DialogTitle>
+            <DialogDescription>
+              Restore your encryption keys from a backup
+            </DialogDescription>
+          </DialogHeader>
+
+          {importStep === 'upload' ? (
+            <div className="space-y-4">
+              {/* Public Key Upload */}
+              <div className="space-y-2">
+                <Label>Public Key File</Label>
+                <input
+                  ref={publicKeyInputRef}
+                  type="file"
+                  accept=".asc,.txt,.pub,.key"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload('public', file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => publicKeyInputRef.current?.click()}
+                >
+                  {importedKeys?.publicKey ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      Public key loaded
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Choose public key file (.asc)
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Private Key Upload */}
+              <div className="space-y-2">
+                <Label>Private Key File (Encrypted)</Label>
+                <input
+                  ref={privateKeyInputRef}
+                  type="file"
+                  accept=".asc,.txt,.key"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload('private', file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => privateKeyInputRef.current?.click()}
+                >
+                  {importedKeys?.privateKey ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      Private key loaded
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Choose private key file (.asc)
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <Button
+                className="w-full"
+                disabled={!importedKeys?.publicKey || !importedKeys?.privateKey}
+                onClick={() => setImportStep('passphrase')}
+              >
+                Continue
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="importPassphrase">Enter Your Passphrase</Label>
+                <Input
+                  id="importPassphrase"
+                  type="password"
+                  placeholder="The passphrase used to encrypt this key"
+                  value={importPassphrase}
+                  onChange={(e) => setImportPassphrase(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the passphrase you used when you originally created these keys.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setImportStep('upload')}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleImportKeys}
+                  disabled={importing || !importPassphrase}
+                  className="flex-1"
+                >
+                  {importing ? 'Importing...' : 'Import Keys'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+            <p>
+              <strong>Tip:</strong> Import the same keys you exported earlier. 
+              Your passphrase must match the original.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
