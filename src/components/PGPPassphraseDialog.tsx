@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { KeyRound, Lock, Shield, Fingerprint, Check } from 'lucide-react';
+import { KeyRound, Lock, Shield, Fingerprint, Check, Eye, EyeOff, MessageSquareLock, Clock, Smartphone } from 'lucide-react';
 import { usePGP } from '@/hooks/usePGP';
 import { usePasskey } from '@/hooks/usePasskey';
 import { useToast } from '@/hooks/use-toast';
@@ -255,46 +255,79 @@ export function PGPPassphraseDialog({ open, onOpenChange, onUnlocked }: PGPPassp
           </div>
         ) : mode === 'create' ? (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="passphrase">Passphrase</Label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="passphrase"
-                  type="password"
-                  placeholder="Enter a strong passphrase"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  className="pl-10"
-                />
+            {/* Onboarding Benefits */}
+            <div className="space-y-3 pb-2">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                  <MessageSquareLock className="w-4 h-4 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Private by default</p>
+                  <p className="text-xs text-muted-foreground">Messages are encrypted before leaving your device. No one else can read them.</p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Minimum 8 characters. This cannot be recovered if lost!
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassphrase">Confirm Passphrase</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="confirmPassphrase"
-                  type="password"
-                  placeholder="Confirm your passphrase"
-                  value={confirmPassphrase}
-                  onChange={(e) => setConfirmPassphrase(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Stay unlocked for 7 days</p>
+                  <p className="text-xs text-muted-foreground">Enter your passphrase once, then forget about it. Your session persists across browser restarts.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4 h-4 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Optional biometric unlock</p>
+                  <p className="text-xs text-muted-foreground">Use fingerprint or Face ID for instant access on supported devices.</p>
+                </div>
               </div>
             </div>
 
-            <Button
-              onClick={handleCreate}
-              disabled={loading || !passphrase || !confirmPassphrase}
-              className="w-full"
-            >
-              {loading ? 'Creating keys...' : 'Create Encryption Keys'}
-            </Button>
+            <div className="border-t pt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="passphrase">Create your passphrase</Label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="passphrase"
+                    type="password"
+                    placeholder="Enter a strong passphrase"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassphrase">Confirm passphrase</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassphrase"
+                    type="password"
+                    placeholder="Confirm your passphrase"
+                    value={confirmPassphrase}
+                    onChange={(e) => setConfirmPassphrase(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Min 8 characters. <span className="text-amber-500 font-medium">Cannot be recovered if lost!</span>
+                </p>
+              </div>
+
+              <Button
+                onClick={handleCreate}
+                disabled={loading || !passphrase || !confirmPassphrase}
+                className="w-full"
+              >
+                {loading ? 'Creating keys...' : 'Enable Encryption'}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
