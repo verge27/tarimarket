@@ -10,8 +10,9 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { usePGP } from '@/hooks/usePGP';
+import { usePasskey } from '@/hooks/usePasskey';
 import { settingsSchema } from '@/lib/validation';
-import { Shield, Download, Key, Copy, Check, AlertTriangle, Upload, FileKey, QrCode, Fingerprint } from 'lucide-react';
+import { Shield, Download, Key, Copy, Check, AlertTriangle, Upload, FileKey, QrCode, Fingerprint, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { PGPPassphraseDialog } from '@/components/PGPPassphraseDialog';
@@ -27,7 +28,8 @@ import {
 const Settings = () => {
   const { user } = useAuth();
   const { profile, loading, updateProfile } = useProfile();
-  const { isUnlocked, checkHasKeys, restoreSession } = usePGP();
+  const { isUnlocked, checkHasKeys, restoreSession, unlockKeys } = usePGP();
+  const { isSupported: passkeySupported, hasPasskey, checkAvailability, registerPasskey, removePasskey } = usePasskey();
   const [displayName, setDisplayName] = useState('');
   const [xmrAddress, setXmrAddress] = useState('');
   const [pgpKeys, setPgpKeys] = useState<{ publicKey: string; encryptedPrivateKey: string } | null>(null);
@@ -41,6 +43,10 @@ const Settings = () => {
   const [importPassphrase, setImportPassphrase] = useState('');
   const [importing, setImporting] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [showPasskeySetup, setShowPasskeySetup] = useState(false);
+  const [passkeyPassphrase, setPasskeyPassphrase] = useState('');
+  const [settingUpPasskey, setSettingUpPasskey] = useState(false);
   const publicKeyInputRef = useRef<HTMLInputElement>(null);
   const privateKeyInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,7 +95,8 @@ const Settings = () => {
 
     fetchKeys();
     restoreSession();
-  }, [user, restoreSession]);
+    checkAvailability().then(setPasskeyAvailable);
+  }, [user, restoreSession, checkAvailability]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -151,6 +158,32 @@ const Settings = () => {
     URL.revokeObjectURL(url);
     
     toast.success(`${type === 'public' ? 'Public' : 'Private'} key downloaded`);
+  };
+
+  const handlePasskeySetup = async () => {
+    if (!passkeyPassphrase) return;
+    
+    setSettingUpPasskey(true);
+    
+    // First verify the passphrase is correct
+    const unlockSuccess = await unlockKeys(passkeyPassphrase);
+    if (!unlockSuccess) {
+      toast.error('Wrong passphrase');
+      setSettingUpPasskey(false);
+      return;
+    }
+    
+    // Register the passkey
+    const success = await registerPasskey(passkeyPassphrase);
+    setSettingUpPasskey(false);
+    
+    if (success) {
+      toast.success('Biometric unlock enabled');
+      setShowPasskeySetup(false);
+      setPasskeyPassphrase('');
+    } else {
+      toast.error('Failed to set up biometric unlock');
+    }
   };
 
   const handleFileUpload = async (type: 'public' | 'private', file: File) => {
@@ -442,6 +475,67 @@ const Settings = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* Biometric Unlock Settings */}
+                {passkeyAvailable && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <Fingerprint className="w-4 h-4 text-primary" />
+                        Biometric Unlock
+                      </Label>
+                      
+                      {hasPasskey ? (
+                        <div className="space-y-3">
+                          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Check className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-green-500 font-medium">Biometric unlock enabled</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowPasskeySetup(true)}
+                              className="flex-1"
+                            >
+                              <Fingerprint className="w-4 h-4 mr-2" />
+                              Re-register
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                removePasskey();
+                                toast.success('Biometric unlock disabled');
+                              }}
+                              className="flex-1 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Disable
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            Use fingerprint or Face ID to unlock your encryption keys faster.
+                          </p>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowPasskeySetup(true)}
+                            className="w-full"
+                          >
+                            <Fingerprint className="w-4 h-4 mr-2" />
+                            Enable Biometric Unlock
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <div className="text-center py-6">
@@ -658,6 +752,62 @@ const Settings = () => {
               <Download className="w-4 h-4 mr-2" />
               Download
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Passkey Setup Dialog */}
+      <Dialog open={showPasskeySetup} onOpenChange={(open) => {
+        setShowPasskeySetup(open);
+        if (!open) {
+          setPasskeyPassphrase('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Fingerprint className="w-5 h-5 text-primary" />
+              {hasPasskey ? 'Re-register Biometric' : 'Enable Biometric Unlock'}
+            </DialogTitle>
+            <DialogDescription>
+              Enter your passphrase to {hasPasskey ? 're-register' : 'set up'} biometric unlock
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="passkeyPassphrase">PGP Passphrase</Label>
+              <Input
+                id="passkeyPassphrase"
+                type="password"
+                placeholder="Enter your PGP passphrase"
+                value={passkeyPassphrase}
+                onChange={(e) => setPasskeyPassphrase(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && passkeyPassphrase) {
+                    handlePasskeySetup();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                This is needed to securely store your passphrase for biometric access.
+              </p>
+            </div>
+
+            <Button
+              onClick={handlePasskeySetup}
+              disabled={settingUpPasskey || !passkeyPassphrase}
+              className="w-full"
+            >
+              {settingUpPasskey ? 'Setting up...' : hasPasskey ? 'Re-register Biometric' : 'Enable Biometric Unlock'}
+            </Button>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+            <p>
+              <strong>How it works:</strong> Your passphrase is encrypted and stored locally. 
+              Only your biometric can decrypt it to unlock your PGP keys.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
