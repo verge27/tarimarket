@@ -182,14 +182,31 @@ const Auth = () => {
                     <form onSubmit={handleKeySignIn} className="space-y-4">
                       <div>
                         <Label htmlFor="private-key">Private Key</Label>
-                        <Input
-                          id="private-key"
-                          type="password"
-                          placeholder="Enter your 64-character private key"
-                          value={privateKeyInput}
-                          onChange={(e) => setPrivateKeyInput(e.target.value)}
-                          className="font-mono text-sm"
-                        />
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            id="private-key"
+                            type="password"
+                            placeholder="Enter your 64-character private key"
+                            value={privateKeyInput}
+                            onChange={(e) => setPrivateKeyInput(e.target.value)}
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              if (privateKeyInput.length === 64) {
+                                navigator.clipboard.writeText(privateKeyInput);
+                                toast.success('Private key copied!');
+                              }
+                            }}
+                            disabled={privateKeyInput.length !== 64}
+                            title="Copy key"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <Button 
                         type="submit" 
