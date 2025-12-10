@@ -11,7 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { usePGP } from '@/hooks/usePGP';
 import { settingsSchema } from '@/lib/validation';
-import { Shield, Download, Key, Copy, Check, AlertTriangle, Upload, FileKey } from 'lucide-react';
+import { Shield, Download, Key, Copy, Check, AlertTriangle, Upload, FileKey, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { PGPPassphraseDialog } from '@/components/PGPPassphraseDialog';
 import * as openpgp from 'openpgp';
@@ -38,6 +39,7 @@ const Settings = () => {
   const [importedKeys, setImportedKeys] = useState<{ publicKey: string; privateKey: string } | null>(null);
   const [importPassphrase, setImportPassphrase] = useState('');
   const [importing, setImporting] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
   const publicKeyInputRef = useRef<HTMLInputElement>(null);
   const privateKeyInputRef = useRef<HTMLInputElement>(null);
 
@@ -313,6 +315,14 @@ const Settings = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setShowQRDialog(true)}
+                      >
+                        <QrCode className="w-4 h-4 mr-1" />
+                        QR
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleCopy('public')}
                       >
                         {copied === 'public' ? (
@@ -549,6 +559,56 @@ const Settings = () => {
               <strong>Tip:</strong> Import the same keys you exported earlier. 
               Your passphrase must match the original.
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-primary" />
+              Public Key QR Code
+            </DialogTitle>
+            <DialogDescription>
+              Scan this code to import the public key on another device
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4 py-4">
+            {pgpKeys?.publicKey && (
+              <div className="bg-white p-4 rounded-lg">
+                <QRCodeSVG 
+                  value={pgpKeys.publicKey} 
+                  size={256}
+                  level="L"
+                  includeMargin={false}
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground text-center max-w-[280px]">
+              This QR code contains your full public key. Others can scan it to encrypt messages for you.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleCopy('public')}
+            >
+              {copied === 'public' ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+              Copy Key
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleDownload('public')}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
