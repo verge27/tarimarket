@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import vpsBackground from '@/assets/vps-background.png';
 
 const SPORESTACK_API = 'https://api.sporestack.com';
 
@@ -378,7 +379,14 @@ const VPS = () => {
   const selectedFlavorDetails = flavors.find(f => f.slug === selectedFlavor);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
+      {/* Background image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10"
+        style={{ backgroundImage: `url(${vpsBackground})` }}
+      />
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm -z-10" />
+      
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8">
