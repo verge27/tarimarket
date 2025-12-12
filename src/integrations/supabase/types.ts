@@ -120,6 +120,13 @@ export type Database = {
             referencedRelation: "private_key_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "conversation_participants_private_key_user_id_fkey"
+            columns: ["private_key_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       conversations: {
@@ -304,6 +311,13 @@ export type Database = {
             referencedRelation: "private_key_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_sender_private_key_user_id_fkey"
+            columns: ["sender_private_key_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orders: {
@@ -382,6 +396,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_buyer_pk_user_id_fkey"
+            columns: ["buyer_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
@@ -393,6 +414,13 @@ export type Database = {
             columns: ["seller_pk_user_id"]
             isOneToOne: false
             referencedRelation: "private_key_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_seller_pk_user_id_fkey"
+            columns: ["seller_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
             referencedColumns: ["id"]
           },
         ]
@@ -531,10 +559,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_reviewer_pk_user_id_fkey"
+            columns: ["reviewer_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reviews_seller_pk_user_id_fkey"
             columns: ["seller_pk_user_id"]
             isOneToOne: false
             referencedRelation: "private_key_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_seller_pk_user_id_fkey"
+            columns: ["seller_pk_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_private_key_users"
             referencedColumns: ["id"]
           },
         ]
@@ -640,6 +682,39 @@ export type Database = {
       }
     }
     Views: {
+      public_private_key_users: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          pgp_public_key: string | null
+          public_key: string | null
+          reputation_score: number | null
+          total_trades: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          pgp_public_key?: string | null
+          public_key?: string | null
+          reputation_score?: number | null
+          total_trades?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          pgp_public_key?: string | null
+          public_key?: string | null
+          reputation_score?: number | null
+          total_trades?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           created_at: string | null

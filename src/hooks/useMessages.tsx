@@ -111,7 +111,7 @@ export function useMessages() {
         : { data: [] };
 
       const { data: pkUsersData } = pkUserIds.length > 0
-        ? await supabase.from('private_key_users').select('id, display_name').in('id', pkUserIds)
+        ? await supabase.from('public_private_key_users').select('id, display_name').in('id', pkUserIds)
         : { data: [] };
 
       // Fetch last message for each conversation
@@ -260,7 +260,7 @@ export function useConversation(conversationId: string | undefined) {
         : { data: [] };
 
       const { data: senderPkUsers } = senderPkIds.length > 0
-        ? await supabase.from('private_key_users').select('id, display_name').in('id', senderPkIds)
+        ? await supabase.from('public_private_key_users').select('id, display_name').in('id', senderPkIds)
         : { data: [] };
 
       const enrichedMessages: Message[] = (data || []).map(msg => ({
