@@ -56,7 +56,7 @@ export function useSellerReviews(sellerId: string | undefined, isPrivateKey = fa
       const reviewerPkIds = (reviewsData || []).filter(r => r.reviewer_pk_user_id).map(r => r.reviewer_pk_user_id!);
 
       const { data: profiles } = reviewerUserIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name').in('id', reviewerUserIds)
+        ? await supabase.from('public_profiles').select('id, display_name').in('id', reviewerUserIds)
         : { data: [] };
 
       const { data: pkUsers } = reviewerPkIds.length > 0
@@ -96,7 +96,7 @@ export function useSellerReviews(sellerId: string | undefined, isPrivateKey = fa
         }
       } else {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('reputation_score, total_reviews')
           .eq('id', sellerId)
           .maybeSingle();

@@ -107,7 +107,7 @@ export function useMessages() {
       const pkUserIds = (allParticipants || []).filter(p => p.private_key_user_id).map(p => p.private_key_user_id!);
 
       const { data: profilesData } = userIds.length > 0 
-        ? await supabase.from('profiles').select('id, display_name').in('id', userIds)
+        ? await supabase.from('public_profiles').select('id, display_name').in('id', userIds)
         : { data: [] };
 
       const { data: pkUsersData } = pkUserIds.length > 0
@@ -256,7 +256,7 @@ export function useConversation(conversationId: string | undefined) {
       const senderPkIds = (data || []).filter(m => m.sender_private_key_user_id).map(m => m.sender_private_key_user_id!);
 
       const { data: senderProfiles } = senderUserIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name').in('id', senderUserIds)
+        ? await supabase.from('public_profiles').select('id, display_name').in('id', senderUserIds)
         : { data: [] };
 
       const { data: senderPkUsers } = senderPkIds.length > 0
