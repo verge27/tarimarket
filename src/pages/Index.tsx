@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { SiteAssistant } from '@/components/SiteAssistant';
+import heroBackground from '@/assets/hero-background.png';
 
 const Index = () => {
   const features = [
@@ -35,51 +36,63 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* KYCNOT.ME Badge */}
-          <a 
-            href="https://kycnot.me/service/0xnull"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors group"
-          >
-            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-              7/10
-            </Badge>
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-              Verified on KYCNOT.ME
-            </span>
-            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          </a>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
-            Buy & Sell
-            <br />
-            <span className="text-gradient">Anonymously</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            The privacy-first marketplace powered by cryptocurrency. Trade physical goods, digital products, and services without compromising your identity.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/browse">
-              <Button size="lg" className="gap-2 text-lg px-8">
-                Start Shopping
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/sell">
-              <Button size="lg" variant="secondary" className="gap-2 text-lg px-8">
-                Start Selling
-              </Button>
-            </Link>
-            <Link to="/voice">
-              <Button size="lg" variant="outline" className="gap-2 text-lg px-8">
-                <Volume2 className="w-5 h-5" />
-                Voice Cloning
-              </Button>
-            </Link>
+      {/* Hero Section with Background */}
+      <section className="relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={heroBackground} 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background" />
+        </div>
+        
+        <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* KYCNOT.ME Badge */}
+            <a 
+              href="https://kycnot.me/service/0xnull"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-background/60 backdrop-blur-sm border border-primary/20 hover:bg-background/80 transition-colors group"
+            >
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                7/10
+              </Badge>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                Verified on KYCNOT.ME
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </a>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight drop-shadow-lg">
+              Buy & Sell
+              <br />
+              <span className="text-gradient">Anonymously</span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto drop-shadow-md">
+              The privacy-first marketplace powered by cryptocurrency. Trade physical goods, digital products, and services without compromising your identity.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link to="/browse">
+                <Button size="lg" className="gap-2 text-lg px-8 shadow-lg">
+                  Start Shopping
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to="/sell">
+                <Button size="lg" variant="secondary" className="gap-2 text-lg px-8 shadow-lg">
+                  Start Selling
+                </Button>
+              </Link>
+              <Link to="/voice">
+                <Button size="lg" variant="outline" className="gap-2 text-lg px-8 shadow-lg bg-background/50 backdrop-blur-sm">
+                  <Volume2 className="w-5 h-5" />
+                  Voice Cloning
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
