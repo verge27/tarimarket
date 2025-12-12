@@ -6,7 +6,7 @@ import { getOrders } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil, Copy, Pause, Play, Eye, TrendingUp } from 'lucide-react';
+import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil, Copy, Pause, Play, Eye, TrendingUp, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -41,6 +41,9 @@ const Sell = () => {
   const { xmrToUsd } = useExchangeRate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [salesByListing, setSalesByListing] = useState<Record<string, number>>({});
+  const [sortColumn, setSortColumn] = useState<'title' | 'price' | 'stock' | 'views' | 'sales' | 'created'>('created');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused'>('all');
 
   // Fetch sales counts per listing
   useEffect(() => {
@@ -77,6 +80,50 @@ const Sell = () => {
     .reduce((sum, o) => sum + xmrToUsd(o.totalXmr), 0);
   
   const activeListings = userListings.filter(l => l.status === 'active').length;
+
+  // Filter and sort listings
+  const filteredAndSortedListings = userListings
+    .filter(listing => statusFilter === 'all' || listing.status === statusFilter)
+    .sort((a, b) => {
+      let comparison = 0;
+      switch (sortColumn) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'price':
+          comparison = a.price_usd - b.price_usd;
+          break;
+        case 'stock':
+          comparison = a.stock - b.stock;
+          break;
+        case 'views':
+          comparison = (a.views || 0) - (b.views || 0);
+          break;
+        case 'sales':
+          comparison = (salesByListing[a.id] || 0) - (salesByListing[b.id] || 0);
+          break;
+        case 'created':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+  const handleSort = (column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-3 h-3 ml-1" /> 
+      : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
 
   const handleDelete = async (id: string) => {
     await deleteListing(id);
@@ -119,10 +166,10 @@ const Sell = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === userListings.length) {
+    if (selectedIds.size === filteredAndSortedListings.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(userListings.map(l => l.id)));
+      setSelectedIds(new Set(filteredAndSortedListings.map(l => l.id)));
     }
   };
 
@@ -228,7 +275,23 @@ const Sell = () => {
         {/* Listings */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">My Listings</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">My Listings</h2>
+              
+              {/* Filter Controls */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'paused')}
+                  className="text-sm border border-input bg-background rounded-md px-3 py-1.5"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                </select>
+              </div>
+            </div>
             
             {/* Bulk Actions */}
             {selectedIds.size > 0 && (
@@ -284,31 +347,43 @@ const Sell = () => {
                     <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={userListings.length > 0 && selectedIds.size === userListings.length}
+                          checked={filteredAndSortedListings.length > 0 && selectedIds.size === filteredAndSortedListings.length}
                           onCheckedChange={toggleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
                       <TableHead>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          Views
-                        </div>
+                        <button onClick={() => handleSort('title')} className="flex items-center hover:text-foreground">
+                          Product <SortIcon column="title" />
+                        </button>
                       </TableHead>
                       <TableHead>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          Sales
-                        </div>
+                        <button onClick={() => handleSort('price')} className="flex items-center hover:text-foreground">
+                          Price <SortIcon column="price" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => handleSort('stock')} className="flex items-center hover:text-foreground">
+                          Stock <SortIcon column="stock" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => handleSort('views')} className="flex items-center hover:text-foreground">
+                          <Eye className="w-3 h-3 mr-1" />
+                          Views <SortIcon column="views" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button onClick={() => handleSort('sales')} className="flex items-center hover:text-foreground">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          Sales <SortIcon column="sales" />
+                        </button>
                       </TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {userListings.map(listing => (
+                    {filteredAndSortedListings.map(listing => (
                       <TableRow key={listing.id} className={selectedIds.has(listing.id) ? 'bg-muted/50' : ''}>
                         <TableCell>
                           <Checkbox
@@ -392,9 +467,11 @@ const Sell = () => {
                     ))}
                   </TableBody>
                 </Table>
-                {userListings.length === 0 && (
+                {filteredAndSortedListings.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No listings yet. Create your first listing to get started!
+                    {userListings.length === 0 
+                      ? "No listings yet. Create your first listing to get started!"
+                      : "No listings match your filter."}
                   </div>
                 )}
               </>
