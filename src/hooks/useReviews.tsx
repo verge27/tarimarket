@@ -60,7 +60,7 @@ export function useSellerReviews(sellerId: string | undefined, isPrivateKey = fa
         : { data: [] };
 
       const { data: pkUsers } = reviewerPkIds.length > 0
-        ? await supabase.from('private_key_users').select('id, display_name').in('id', reviewerPkIds)
+        ? await supabase.from('public_private_key_users').select('id, display_name').in('id', reviewerPkIds)
         : { data: [] };
 
       // Fetch listing titles
@@ -83,7 +83,7 @@ export function useSellerReviews(sellerId: string | undefined, isPrivateKey = fa
       // Fetch reputation
       if (isPrivateKey) {
         const { data: pkUser } = await supabase
-          .from('private_key_users')
+          .from('public_private_key_users')
           .select('reputation_score, total_trades')
           .eq('id', sellerId)
           .maybeSingle();

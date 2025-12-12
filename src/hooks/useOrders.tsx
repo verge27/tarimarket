@@ -77,7 +77,7 @@ export function useOrders() {
         : { data: [] };
 
       const { data: pkUsers } = allPkIds.length > 0
-        ? await supabase.from('private_key_users').select('id, display_name').in('id', allPkIds)
+        ? await supabase.from('public_private_key_users').select('id, display_name').in('id', allPkIds)
         : { data: [] };
 
       const enrichedOrders: Order[] = (data || []).map(order => {
