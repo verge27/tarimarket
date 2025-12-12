@@ -40,7 +40,13 @@ const Terms = () => {
                   <li><strong>Stolen property</strong>, data, credentials, or identity documents</li>
                   <li><strong>Services intended to cause physical harm</strong>, including murder-for-hire or violence-for-hire</li>
                   <li>Fentanyl or fentanyl analogues</li>
+                  <li><strong>Substances illegal in all jurisdictions worldwide</strong></li>
                 </ul>
+                <p className="mt-4 text-sm border-l-2 border-primary/50 pl-3">
+                  Products that are legal in at least one jurisdiction may be listed. Buyers and sellers 
+                  are solely responsible for compliance with their local laws. The platform does not 
+                  verify the legal status of any item in any jurisdiction.
+                </p>
                 <p className="mt-4 font-medium">
                   The platform does NOT verify, endorse, authenticate, or guarantee any listing. 
                   All items and services are provided by independent sellers without platform verification.
