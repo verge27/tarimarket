@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { CsvImportDialog } from '@/components/CsvImportDialog';
@@ -5,7 +6,8 @@ import { getOrders } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil, Copy } from 'lucide-react';
+import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil, Copy, Pause, Play } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -36,6 +38,7 @@ const Sell = () => {
   const { user } = useAuth();
   const { userListings, loading, createManyListings, deleteListing, updateListing, createListing } = useListings();
   const { xmrToUsd } = useExchangeRate();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -75,6 +78,59 @@ const Sell = () => {
     if (result) {
       toast.success('Listing duplicated!');
     }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === userListings.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(userListings.map(l => l.id)));
+    }
+  };
+
+  const handleBulkPause = async () => {
+    const ids = Array.from(selectedIds);
+    let count = 0;
+    for (const id of ids) {
+      const success = await updateListing(id, { status: 'paused' } as any);
+      if (success) count++;
+    }
+    toast.success(`${count} listing(s) paused`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkActivate = async () => {
+    const ids = Array.from(selectedIds);
+    let count = 0;
+    for (const id of ids) {
+      const success = await updateListing(id, { status: 'active' } as any);
+      if (success) count++;
+    }
+    toast.success(`${count} listing(s) activated`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    let count = 0;
+    for (const id of ids) {
+      const success = await deleteListing(id);
+      if (success) count++;
+    }
+    toast.success(`${count} listing(s) deleted`);
+    setSelectedIds(new Set());
   };
 
   return (
@@ -147,6 +203,50 @@ const Sell = () => {
         <Card className="mb-8">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-4">My Listings</h2>
+            
+            {/* Bulk Actions */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2 mb-4 p-3 bg-muted rounded-lg">
+                <span className="text-sm font-medium">{selectedIds.size} selected</span>
+                <Button variant="outline" size="sm" onClick={handleBulkActivate} className="gap-1">
+                  <Play className="w-3 h-3" />
+                  Activate
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBulkPause} className="gap-1">
+                  <Pause className="w-3 h-3" />
+                  Pause
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
+                      <Trash2 className="w-3 h-3" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} Listing(s)?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the selected listings. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                  Clear
+                </Button>
+              </div>
+            )}
+            
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">
                 Loading listings...
@@ -156,6 +256,12 @@ const Sell = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={userListings.length > 0 && selectedIds.size === userListings.length}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Stock</TableHead>
@@ -165,7 +271,13 @@ const Sell = () => {
                   </TableHeader>
                   <TableBody>
                     {userListings.map(listing => (
-                      <TableRow key={listing.id}>
+                      <TableRow key={listing.id} className={selectedIds.has(listing.id) ? 'bg-muted/50' : ''}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(listing.id)}
+                            onCheckedChange={() => toggleSelection(listing.id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <img
