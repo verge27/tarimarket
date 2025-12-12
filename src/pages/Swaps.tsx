@@ -4,6 +4,7 @@ import { ArrowRightLeft, RefreshCw, Copy, ExternalLink, Check, History, Clock, T
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { SiteAssistant } from '@/components/SiteAssistant';
+import swapsBackground from '@/assets/swaps-background.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -520,10 +521,17 @@ const Swaps = () => {
   const uniqueCoins = getUniqueCoins();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
+      {/* Background Image */}
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20"
+        style={{ backgroundImage: `url(${swapsBackground})` }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+      
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-2">Crypto Swaps</h1>
