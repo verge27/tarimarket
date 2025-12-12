@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import ChatWidget from "@/components/ChatWidget";
 import { useToken } from "@/hooks/useToken";
 import { api, type Voice, TIER_CONFIG } from "@/services/api";
+import voiceBackground from "@/assets/voice-background.png";
 
 const tiers = [
   { id: "free", name: "Free", price: "Free", description: "100 chars max", maxChars: 100 },
@@ -316,7 +317,14 @@ const VoicePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${voiceBackground})`, zIndex: -2 }}
+      />
+      <div className="fixed inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/70" style={{ zIndex: -1 }} />
+      
       <Navbar />
 
       <main className="flex-1">
