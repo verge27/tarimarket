@@ -73,7 +73,7 @@ export function useOrders() {
       const allPkIds = [...new Set([...buyerPkIds, ...sellerPkIds])];
 
       const { data: profiles } = allUserIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name').in('id', allUserIds)
+        ? await supabase.from('public_profiles').select('id, display_name').in('id', allUserIds)
         : { data: [] };
 
       const { data: pkUsers } = allPkIds.length > 0
