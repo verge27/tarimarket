@@ -5,7 +5,7 @@ import { getOrders } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil } from 'lucide-react';
+import { Plus, Package, DollarSign, ShoppingBag, Trash2, Pencil, Copy } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ import {
 
 const Sell = () => {
   const { user } = useAuth();
-  const { userListings, loading, createManyListings, deleteListing, updateListing } = useListings();
+  const { userListings, loading, createManyListings, deleteListing, updateListing, createListing } = useListings();
   const { xmrToUsd } = useExchangeRate();
 
   if (!user) {
@@ -58,6 +58,22 @@ const Sell = () => {
     const success = await updateListing(id, { status: newStatus } as any);
     if (success) {
       toast.success(`Listing ${newStatus === 'active' ? 'activated' : 'paused'}`);
+    }
+  };
+
+  const handleDuplicate = async (listing: typeof userListings[0]) => {
+    const result = await createListing({
+      title: `${listing.title} (Copy)`,
+      description: listing.description,
+      price_usd: listing.price_usd,
+      category: listing.category,
+      images: listing.images,
+      stock: listing.stock,
+      shipping_price_usd: listing.shipping_price_usd,
+      condition: listing.condition,
+    });
+    if (result) {
+      toast.success('Listing duplicated!');
     }
   };
 
@@ -178,10 +194,18 @@ const Sell = () => {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Link to={`/sell/edit/${listing.id}`}>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" title="Edit">
                                 <Pencil className="w-4 h-4" />
                               </Button>
                             </Link>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title="Duplicate"
+                              onClick={() => handleDuplicate(listing)}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
