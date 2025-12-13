@@ -6,20 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const COINGLASS_API_KEY = Deno.env.get('COINGLASS_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Helper to make Coinglass API requests
-async function coinglassRequest(endpoint: string): Promise<Response> {
-  const response = await fetch(`https://open-api-v3.coinglass.com/api${endpoint}`, {
-    headers: {
-      'CG-API-KEY': COINGLASS_API_KEY!,
-      'Content-Type': 'application/json',
-    },
-  });
-  return response;
-}
+// CoinGecko ID mapping
+const COINGECKO_IDS: Record<string, string> = {
+  'BTC': 'bitcoin',
+  'ETH': 'ethereum',
+  'XMR': 'monero',
+  'SOL': 'solana',
+  'DOGE': 'dogecoin',
+  'LTC': 'litecoin',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,34 +28,34 @@ serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'price';
     const symbol = url.searchParams.get('symbol') || 'BTC';
-
-    if (!COINGLASS_API_KEY) {
-      throw new Error('COINGLASS_API_KEY not configured');
-    }
+    const coinId = COINGECKO_IDS[symbol.toUpperCase()] || symbol.toLowerCase();
 
     if (action === 'price') {
-      // Fetch current price from Coinglass spot markets endpoint
-      const response = await coinglassRequest(`/spot/coins-markets?symbol=${symbol}`);
+      // Fetch current price from CoinGecko - free, no API key needed
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`,
+        { headers: { 'Accept': 'application/json' } }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Coinglass API error:', errorText);
-        throw new Error(`Coinglass API error: ${response.status} - ${errorText}`);
+        console.error('CoinGecko API error:', errorText);
+        throw new Error(`CoinGecko API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Coinglass price response:', JSON.stringify(data));
+      console.log('CoinGecko price response:', JSON.stringify(data));
 
-      // Extract price from the response
-      const coinData = data.data?.[0];
-      const price = coinData?.current_price || coinData?.price;
+      const coinData = data[coinId];
+      if (!coinData) {
+        throw new Error(`No data found for ${symbol}`);
+      }
 
       return new Response(JSON.stringify({
         symbol,
-        price,
-        priceChange24h: coinData?.price_change_24h,
-        priceChangePercent24h: coinData?.price_change_percent_24h,
-        volume24h: coinData?.volume_usd_24h,
+        price: coinData.usd,
+        priceChange24h: coinData.usd_24h_change,
+        volume24h: coinData.usd_24h_vol,
         timestamp: Date.now(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -65,23 +63,25 @@ serve(async (req) => {
     }
 
     if (action === 'resolve-market') {
-      // Auto-resolve a prediction market based on BTC price
+      // Auto-resolve a prediction market based on price
       const { marketId, targetPrice, comparison } = await req.json();
       
       if (!marketId || !targetPrice || !comparison) {
         throw new Error('Missing required fields: marketId, targetPrice, comparison');
       }
 
-      // Fetch current BTC price
-      const priceResponse = await coinglassRequest(`/spot/coins-markets?symbol=${symbol}`);
+      // Fetch current price from CoinGecko
+      const priceResponse = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
+        { headers: { 'Accept': 'application/json' } }
+      );
 
       if (!priceResponse.ok) {
-        throw new Error('Failed to fetch price from Coinglass');
+        throw new Error('Failed to fetch price from CoinGecko');
       }
 
       const priceData = await priceResponse.json();
-      const coinData = priceData.data?.[0];
-      const currentPrice = coinData?.current_price || coinData?.price;
+      const currentPrice = priceData[coinId]?.usd;
       
       if (!currentPrice) {
         throw new Error('Could not fetch current price');
@@ -96,7 +96,7 @@ serve(async (req) => {
       } else if (comparison === 'below') {
         outcome = currentPrice < targetPrice ? 'yes' : 'no';
       } else if (comparison === 'equals') {
-        outcome = Math.abs(currentPrice - targetPrice) < 100 ? 'yes' : 'no'; // Within $100
+        outcome = Math.abs(currentPrice - targetPrice) < 100 ? 'yes' : 'no';
       } else {
         throw new Error('Invalid comparison type. Use: above, below, equals');
       }
@@ -133,40 +133,10 @@ serve(async (req) => {
       });
     }
 
-    if (action === 'funding-rates') {
-      // Fetch funding rates
-      const response = await coinglassRequest(`/futures/funding-rate?symbol=${symbol}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Coinglass API error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'open-interest') {
-      // Fetch open interest
-      const response = await coinglassRequest(`/futures/open-interest?symbol=${symbol}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Coinglass API error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     throw new Error(`Unknown action: ${action}`);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Coinglass oracle error:', errorMessage);
+    console.error('Price oracle error:', errorMessage);
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
