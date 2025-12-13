@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { toast } from 'sonner';
-import { Plus, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, AlertCircle, Bitcoin, Coins, RefreshCw, ChevronLeft, ChevronRight, MessageSquarePlus } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, AlertCircle, Bitcoin, RefreshCw, ChevronLeft, ChevronRight, MessageSquarePlus, Hexagon, Sun, CircleDollarSign, Shield, Zap, LockKeyhole, Skull, Gem, Mountain, CircleDot, Atom, Globe, Dog, Smile, Hammer, Link2, Sparkles, Ghost } from 'lucide-react';
 
 interface Market {
   id: string;
@@ -58,29 +58,29 @@ const ORACLE_FEE_WALLET = '42wxZ5mEQniV4RVo4JvgJjM3xcqtKTgqSYWFftE14ad8Yp4eVHVLm
 const ORACLE_ASSETS: OracleAsset[] = [
   // Major
   { symbol: 'BTC', name: 'Bitcoin', category: 'major', icon: <Bitcoin className="w-5 h-5 text-orange-500" /> },
-  { symbol: 'ETH', name: 'Ethereum', category: 'major', icon: <Coins className="w-5 h-5 text-blue-400" /> },
-  { symbol: 'SOL', name: 'Solana', category: 'major', icon: <Coins className="w-5 h-5 text-purple-400" /> },
-  { symbol: 'LTC', name: 'Litecoin', category: 'major', icon: <Coins className="w-5 h-5 text-gray-400" /> },
+  { symbol: 'ETH', name: 'Ethereum', category: 'major', icon: <Hexagon className="w-5 h-5 text-blue-400" /> },
+  { symbol: 'SOL', name: 'Solana', category: 'major', icon: <Sun className="w-5 h-5 text-purple-400" /> },
+  { symbol: 'LTC', name: 'Litecoin', category: 'major', icon: <CircleDollarSign className="w-5 h-5 text-gray-400" /> },
   // Privacy
-  { symbol: 'XMR', name: 'Monero', category: 'privacy', icon: <Coins className="w-5 h-5 text-orange-400" /> },
-  { symbol: 'DASH', name: 'Dash', category: 'privacy', icon: <Coins className="w-5 h-5 text-blue-500" /> },
-  { symbol: 'ZEC', name: 'Zcash', category: 'privacy', icon: <Coins className="w-5 h-5 text-yellow-400" /> },
-  { symbol: 'ARRR', name: 'Pirate Chain', category: 'privacy', icon: <Coins className="w-5 h-5 text-amber-600" /> },
+  { symbol: 'XMR', name: 'Monero', category: 'privacy', icon: <Shield className="w-5 h-5 text-orange-400" /> },
+  { symbol: 'DASH', name: 'Dash', category: 'privacy', icon: <Zap className="w-5 h-5 text-blue-500" /> },
+  { symbol: 'ZEC', name: 'Zcash', category: 'privacy', icon: <LockKeyhole className="w-5 h-5 text-yellow-400" /> },
+  { symbol: 'ARRR', name: 'Pirate Chain', category: 'privacy', icon: <Skull className="w-5 h-5 text-amber-600" /> },
   // L1s
-  { symbol: 'ADA', name: 'Cardano', category: 'l1', icon: <Coins className="w-5 h-5 text-blue-600" /> },
-  { symbol: 'AVAX', name: 'Avalanche', category: 'l1', icon: <Coins className="w-5 h-5 text-red-500" /> },
-  { symbol: 'DOT', name: 'Polkadot', category: 'l1', icon: <Coins className="w-5 h-5 text-pink-500" /> },
-  { symbol: 'ATOM', name: 'Cosmos', category: 'l1', icon: <Coins className="w-5 h-5 text-purple-500" /> },
-  { symbol: 'NEAR', name: 'NEAR', category: 'l1', icon: <Coins className="w-5 h-5 text-emerald-400" /> },
+  { symbol: 'ADA', name: 'Cardano', category: 'l1', icon: <Gem className="w-5 h-5 text-blue-600" /> },
+  { symbol: 'AVAX', name: 'Avalanche', category: 'l1', icon: <Mountain className="w-5 h-5 text-red-500" /> },
+  { symbol: 'DOT', name: 'Polkadot', category: 'l1', icon: <CircleDot className="w-5 h-5 text-pink-500" /> },
+  { symbol: 'ATOM', name: 'Cosmos', category: 'l1', icon: <Atom className="w-5 h-5 text-purple-500" /> },
+  { symbol: 'NEAR', name: 'NEAR', category: 'l1', icon: <Globe className="w-5 h-5 text-emerald-400" /> },
   // Memes
-  { symbol: 'DOGE', name: 'Dogecoin', category: 'meme', icon: <Coins className="w-5 h-5 text-yellow-500" /> },
-  { symbol: 'SHIB', name: 'Shiba Inu', category: 'meme', icon: <Coins className="w-5 h-5 text-orange-500" /> },
-  { symbol: 'PEPE', name: 'Pepe', category: 'meme', icon: <Coins className="w-5 h-5 text-green-500" /> },
-  { symbol: 'BONK', name: 'Bonk', category: 'meme', icon: <Coins className="w-5 h-5 text-amber-500" /> },
+  { symbol: 'DOGE', name: 'Dogecoin', category: 'meme', icon: <Dog className="w-5 h-5 text-yellow-500" /> },
+  { symbol: 'SHIB', name: 'Shiba Inu', category: 'meme', icon: <Dog className="w-5 h-5 text-orange-500" /> },
+  { symbol: 'PEPE', name: 'Pepe', category: 'meme', icon: <Smile className="w-5 h-5 text-green-500" /> },
+  { symbol: 'BONK', name: 'Bonk', category: 'meme', icon: <Hammer className="w-5 h-5 text-amber-500" /> },
   // DeFi
-  { symbol: 'LINK', name: 'Chainlink', category: 'defi', icon: <Coins className="w-5 h-5 text-blue-400" /> },
-  { symbol: 'UNI', name: 'Uniswap', category: 'defi', icon: <Coins className="w-5 h-5 text-pink-400" /> },
-  { symbol: 'AAVE', name: 'Aave', category: 'defi', icon: <Coins className="w-5 h-5 text-purple-300" /> },
+  { symbol: 'LINK', name: 'Chainlink', category: 'defi', icon: <Link2 className="w-5 h-5 text-blue-400" /> },
+  { symbol: 'UNI', name: 'Uniswap', category: 'defi', icon: <Sparkles className="w-5 h-5 text-pink-400" /> },
+  { symbol: 'AAVE', name: 'Aave', category: 'defi', icon: <Ghost className="w-5 h-5 text-purple-300" /> },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -408,7 +408,7 @@ export default function Predictions() {
           <div className="p-3 border-b border-border flex items-center justify-between">
             {!sidebarCollapsed && (
               <h2 className="font-semibold text-sm flex items-center gap-2">
-                <Coins className="w-4 h-4" />
+                <Bitcoin className="w-4 h-4" />
                 Oracle Markets
               </h2>
             )}
