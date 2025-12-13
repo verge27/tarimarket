@@ -89,6 +89,11 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/support" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Support
+                </Link>
+              </li>
+              <li>
                 <a 
                   href="https://kycnot.me/service/0xnull"
                   target="_blank"
