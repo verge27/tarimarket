@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,10 +21,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Package, Truck, CheckCircle, XCircle, Clock, AlertTriangle, Loader2, ShoppingBag } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, AlertTriangle, Loader2, ShoppingBag, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useOrders, type Order, type OrderStatus } from '@/hooks/useOrders';
+import { usePGP } from '@/hooks/usePGP';
+import { PGPPassphraseDialog } from '@/components/PGPPassphraseDialog';
 
 const statusConfig: Record<OrderStatus, { label: string; icon: React.ReactNode; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   pending: { label: 'Pending Payment', icon: <Clock className="w-4 h-4" />, variant: 'secondary' },
@@ -38,9 +40,41 @@ const statusConfig: Record<OrderStatus, { label: string; icon: React.ReactNode; 
 
 const Orders = () => {
   const { orders, loading, isAuthenticated, updateOrderStatus, isBuyer, isSeller } = useOrders();
+  const { isUnlocked, decryptMessage, isPGPEncrypted, restoreSession } = usePGP();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [showPgpDialog, setShowPgpDialog] = useState(false);
+  const [decryptedAddresses, setDecryptedAddresses] = useState<Record<string, string>>({});
+  const [decrypting, setDecrypting] = useState<string | null>(null);
+
+  // Restore PGP session on mount
+  React.useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  // Decrypt shipping address for seller
+  const handleDecryptAddress = async (orderId: string, encryptedAddress: string) => {
+    if (!isUnlocked) {
+      setShowPgpDialog(true);
+      return;
+    }
+
+    setDecrypting(orderId);
+    try {
+      const decrypted = await decryptMessage(encryptedAddress);
+      if (decrypted) {
+        setDecryptedAddresses(prev => ({ ...prev, [orderId]: decrypted }));
+      } else {
+        toast.error('Failed to decrypt address. Make sure you have the correct PGP key.');
+      }
+    } catch (e) {
+      console.error('Decryption error:', e);
+      toast.error('Decryption failed');
+    } finally {
+      setDecrypting(null);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -268,8 +302,71 @@ const Orders = () => {
                   )}
                   {selectedOrder.shipping_address && (
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Shipping Address</p>
-                      <p className="whitespace-pre-wrap">{selectedOrder.shipping_address}</p>
+                      <p className="text-muted-foreground flex items-center gap-2">
+                        Shipping Address
+                        {isPGPEncrypted(selectedOrder.shipping_address) && (
+                          <Lock className="w-3 h-3 text-green-500" />
+                        )}
+                      </p>
+                      {isPGPEncrypted(selectedOrder.shipping_address) ? (
+                        // Encrypted address - show decrypt UI for sellers
+                        isSeller(selectedOrder) ? (
+                          decryptedAddresses[selectedOrder.id] ? (
+                            <div className="mt-2">
+                              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs mb-2">
+                                  <Unlock className="w-3 h-3" />
+                                  Decrypted
+                                </div>
+                                <p className="whitespace-pre-wrap font-medium">{decryptedAddresses[selectedOrder.id]}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2 text-xs"
+                                onClick={() => setDecryptedAddresses(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[selectedOrder.id];
+                                  return updated;
+                                })}
+                              >
+                                <EyeOff className="w-3 h-3 mr-1" />
+                                Hide Address
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="mt-2">
+                              <div className="bg-muted rounded-lg p-3 text-xs font-mono text-muted-foreground mb-2 max-h-20 overflow-hidden">
+                                {selectedOrder.shipping_address.slice(0, 100)}...
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDecryptAddress(selectedOrder.id, selectedOrder.shipping_address!)}
+                                disabled={decrypting === selectedOrder.id}
+                              >
+                                {decrypting === selectedOrder.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                ) : (
+                                  <Eye className="w-3 h-3 mr-1" />
+                                )}
+                                {isUnlocked ? 'Decrypt Address' : 'Unlock PGP to Decrypt'}
+                              </Button>
+                            </div>
+                          )
+                        ) : (
+                          // Buyer sees encrypted confirmation
+                          <div className="mt-2 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
+                              <Lock className="w-4 h-4" />
+                              <span>Your address is encrypted - only the seller can read it</span>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        // Unencrypted address (legacy orders)
+                        <p className="whitespace-pre-wrap">{selectedOrder.shipping_address}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -330,6 +427,16 @@ const Orders = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* PGP Passphrase Dialog */}
+        <PGPPassphraseDialog
+          open={showPgpDialog}
+          onOpenChange={setShowPgpDialog}
+          onUnlocked={() => {
+            setShowPgpDialog(false);
+            toast.success('PGP unlocked! You can now decrypt addresses.');
+          }}
+        />
       </div>
     </div>
   );

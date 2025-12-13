@@ -257,22 +257,23 @@ const ListingDetail = () => {
     setLoading(true);
 
     try {
-      // Step 1: Encrypt shipping address with seller's public key
-      let encryptedAddress = shippingAddress.trim();
+      // Step 1: Encrypt shipping address with seller's public key (MANDATORY)
+      let encryptedAddress: string;
       
-      if (listing.isDbListing) {
-        const sellerPublicKey = await getRecipientPublicKey(listing.sellerId, undefined);
-        if (sellerPublicKey) {
-          const encrypted = await encryptMessage(shippingAddress.trim(), sellerPublicKey);
-          if (encrypted) {
-            encryptedAddress = encrypted;
-          } else {
-            toast.error('Failed to encrypt shipping address');
-            setLoading(false);
-            return;
-          }
-        }
+      const sellerPublicKey = await getRecipientPublicKey(listing.sellerId, undefined);
+      if (!sellerPublicKey) {
+        toast.error('Seller has not set up PGP encryption. Cannot place order.');
+        setLoading(false);
+        return;
       }
+      
+      const encrypted = await encryptMessage(shippingAddress.trim(), sellerPublicKey);
+      if (!encrypted) {
+        toast.error('Failed to encrypt shipping address');
+        setLoading(false);
+        return;
+      }
+      encryptedAddress = encrypted;
 
       // Step 2: Auto-start conversation with order context
       let conversationId: string | null = null;
